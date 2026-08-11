@@ -1,0 +1,80 @@
+/**
+ * Toast/notification stack. Driven by resources/js/runix/toast.js and
+ * components/toast-container.blade.php, which renders session('status')
+ * flashes as toasts instead of the old inline green banner.
+ */
+
+.runix-toast-region {
+    position: fixed;
+    z-index: 60;
+    inset-block-end: 1.25rem;
+    inset-inline-end: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    width: min(22rem, calc(100vw - 2rem));
+    pointer-events: none;
+}
+
+.runix-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background-color: var(--runix-surface);
+    border: 1px solid var(--runix-border);
+    border-radius: var(--runix-radius-md);
+    box-shadow: var(--runix-shadow-lg);
+    padding: 0.875rem 1rem;
+    opacity: 0;
+    transform: translateY(0.5rem);
+    transition: opacity var(--runix-duration-slow) var(--runix-ease),
+        transform var(--runix-duration-slow) var(--runix-ease);
+}
+
+.runix-toast[data-visible='true'] {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.runix-toast-icon {
+    flex-shrink: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: var(--runix-success);
+    margin-top: 0.125rem;
+}
+
+.runix-toast[data-tone='danger'] .runix-toast-icon {
+    color: var(--runix-danger);
+}
+
+.runix-toast[data-tone='info'] .runix-toast-icon {
+    color: var(--runix-info);
+}
+
+.runix-toast-message {
+    font-size: 0.875rem;
+    color: var(--runix-text);
+    flex: 1;
+    line-height: 1.375rem;
+}
+
+.runix-toast-close {
+    flex-shrink: 0;
+    color: var(--runix-text-tertiary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0.125rem;
+    border-radius: var(--runix-radius-sm);
+}
+
+.runix-toast-close:hover {
+    color: var(--runix-text);
+}
+
+.runix-toast-close svg {
+    width: 1rem;
+    height: 1rem;
+}

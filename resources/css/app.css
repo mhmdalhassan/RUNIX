@@ -1,0 +1,17 @@
+/* RunIX design system — see resources/css/runix/*.css for each layer.
+   @import must come before any other rule, so the tokens/component layers
+   below load ahead of Tailwind's own generated output. */
+@import 'runix/variables.css';
+@import 'runix/base.css';
+@import 'runix/layout.css';
+@import 'runix/components.css';
+@import 'runix/forms.css';
+@import 'runix/tables.css';
+@import 'runix/modal.css';
+@import 'runix/toast.css';
+@import 'runix/empty-state.css';
+@import 'runix/skeleton.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -1,0 +1,332 @@
+/**
+ * Buttons, cards, badges, avatars, stat tiles and menu chrome. Paired with
+ * components/{button,card,badge,status-badge,stat-card,avatar}.blade.php
+ * and the restyled components/dropdown.blade.php.
+ */
+
+/* ---- Buttons ---- */
+
+.runix-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--runix-radius-sm);
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background-color var(--runix-duration-fast) var(--runix-ease),
+        border-color var(--runix-duration-fast) var(--runix-ease),
+        color var(--runix-duration-fast) var(--runix-ease),
+        transform var(--runix-duration-fast) var(--runix-ease);
+}
+
+.runix-btn:active:not(:disabled):not([aria-disabled='true']) {
+    transform: scale(0.98);
+}
+
+.runix-btn:disabled,
+.runix-btn[aria-disabled='true'] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.runix-btn svg {
+    width: 1rem;
+    height: 1rem;
+}
+
+.runix-btn-primary {
+    background-color: var(--runix-primary);
+    color: var(--runix-primary-contrast);
+}
+
+.runix-btn-primary:hover:not(:disabled) {
+    background-color: var(--runix-primary-hover);
+}
+
+.runix-btn-secondary {
+    background-color: var(--runix-surface);
+    color: var(--runix-text);
+    border-color: var(--runix-border-strong);
+}
+
+.runix-btn-secondary:hover:not(:disabled) {
+    background-color: var(--runix-surface-hover);
+}
+
+.runix-btn-danger {
+    background-color: var(--runix-danger);
+    color: #fff;
+}
+
+.runix-btn-danger:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.runix-btn-success {
+    background-color: var(--runix-success);
+    color: #fff;
+}
+
+.runix-btn-success:hover:not(:disabled) {
+    filter: brightness(0.92);
+}
+
+.runix-btn-ghost {
+    background-color: transparent;
+    color: var(--runix-text-secondary);
+}
+
+.runix-btn-ghost:hover:not(:disabled) {
+    background-color: var(--runix-surface-hover);
+    color: var(--runix-text);
+}
+
+.runix-btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+}
+
+.runix-btn-lg {
+    padding: 0.625rem 1.375rem;
+    font-size: 0.9375rem;
+}
+
+.runix-btn-icon {
+    padding: 0.5rem;
+    border-radius: var(--runix-radius-sm);
+}
+
+/* ---- Cards ---- */
+
+.runix-card {
+    background-color: var(--runix-surface);
+    border: 1px solid var(--runix-border);
+    border-radius: var(--runix-radius-lg);
+    box-shadow: var(--runix-shadow-xs);
+    padding: 1.5rem;
+}
+
+.runix-card-flat {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+.runix-card-hover {
+    transition: box-shadow var(--runix-duration-base) var(--runix-ease),
+        border-color var(--runix-duration-base) var(--runix-ease);
+}
+
+.runix-card-hover:hover {
+    box-shadow: var(--runix-shadow-sm);
+    border-color: var(--runix-border-strong);
+}
+
+.runix-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+/* ---- Badges ---- */
+
+.runix-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.1875rem 0.625rem;
+    border-radius: var(--runix-radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+}
+
+.runix-badge-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: 50%;
+    background-color: currentColor;
+    flex-shrink: 0;
+}
+
+.runix-badge-neutral {
+    background-color: var(--runix-neutral-soft);
+    color: var(--runix-text-secondary);
+}
+
+.runix-badge-info {
+    background-color: var(--runix-info-soft);
+    color: var(--runix-info);
+}
+
+.runix-badge-indigo {
+    background-color: var(--runix-indigo-soft);
+    color: var(--runix-indigo);
+}
+
+.runix-badge-warning {
+    background-color: var(--runix-warning-soft);
+    color: var(--runix-warning);
+}
+
+.runix-badge-violet {
+    background-color: var(--runix-violet-soft);
+    color: var(--runix-violet);
+}
+
+.runix-badge-success {
+    background-color: var(--runix-success-soft);
+    color: var(--runix-success);
+}
+
+.runix-badge-danger {
+    background-color: var(--runix-danger-soft);
+    color: var(--runix-danger);
+}
+
+/* ---- Avatar ---- */
+
+.runix-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--runix-primary-soft);
+    color: var(--runix-primary-hover);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    width: 2.25rem;
+    height: 2.25rem;
+}
+
+.runix-avatar-sm {
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.6875rem;
+}
+
+.runix-avatar-lg {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+}
+
+/* ---- Stat tiles ---- */
+
+.runix-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@media (min-width: 640px) {
+    .runix-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1280px) {
+    .runix-stat-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+.runix-stat-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--runix-radius-md);
+    background-color: var(--runix-primary-soft);
+    color: var(--runix-primary-hover);
+    margin-bottom: 1rem;
+}
+
+.runix-stat-card[data-muted='true'] .runix-stat-card-icon {
+    background-color: var(--runix-surface-secondary);
+    color: var(--runix-text-tertiary);
+}
+
+.runix-stat-card-value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--runix-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.runix-stat-card[data-muted='true'] .runix-stat-card-value {
+    color: var(--runix-text-tertiary);
+}
+
+.runix-stat-card-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--runix-text-secondary);
+    margin-top: 0.375rem;
+}
+
+.runix-stat-card-caption {
+    font-size: 0.75rem;
+    color: var(--runix-text-tertiary);
+    margin-top: 0.25rem;
+}
+
+/* ---- Menus (dropdown content) ---- */
+
+.runix-menu {
+    background-color: var(--runix-surface);
+    border: 1px solid var(--runix-border);
+    border-radius: var(--runix-radius-md);
+    box-shadow: var(--runix-shadow-md);
+    padding: 0.375rem;
+    min-width: 12rem;
+}
+
+.runix-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border-radius: var(--runix-radius-sm);
+    font-size: 0.875rem;
+    color: var(--runix-text-secondary);
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    text-align: start;
+    cursor: pointer;
+    transition: background-color var(--runix-duration-fast) var(--runix-ease),
+        color var(--runix-duration-fast) var(--runix-ease);
+}
+
+.runix-menu-item:hover {
+    background-color: var(--runix-surface-hover);
+    color: var(--runix-text);
+}
+
+.runix-menu-item svg {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.runix-menu-divider {
+    height: 1px;
+    background-color: var(--runix-border);
+    margin: 0.375rem -0.375rem;
+}

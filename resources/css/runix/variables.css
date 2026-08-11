@@ -1,0 +1,151 @@
+/**
+ * RunIX design tokens.
+ *
+ * Light values live on bare :root. Dark values are redefined twice on
+ * purpose: once under `prefers-color-scheme: dark` (guarded so an explicit
+ * "light" choice always wins) and once under `[data-theme="dark"]` (so a
+ * manual toggle always wins, in both directions). See resources/js/runix/theme.js
+ * for how `data-theme` gets set on <html>.
+ */
+
+:root {
+    /* Brand */
+    --runix-primary: #14b8a6;
+    --runix-primary-hover: #0f9488;
+    --runix-primary-active: #0c7a70;
+    --runix-primary-soft: #e6f7f4;
+    --runix-primary-contrast: #ffffff;
+
+    /* Neutrals */
+    --runix-background: #f7f8fa;
+    --runix-surface: #ffffff;
+    --runix-surface-secondary: #f1f3f5;
+    --runix-surface-hover: #eef0f2;
+    --runix-text: #14171a;
+    --runix-text-secondary: #6b7280;
+    --runix-text-tertiary: #9aa1ab;
+    --runix-border: #e5e7eb;
+    --runix-border-strong: #d1d5db;
+
+    /* Semantic status colors */
+    --runix-success: #16a34a;
+    --runix-success-soft: #dcfce7;
+    --runix-warning: #d97706;
+    --runix-warning-soft: #fef3c7;
+    --runix-danger: #dc2626;
+    --runix-danger-soft: #fee2e2;
+    --runix-info: #2563eb;
+    --runix-info-soft: #dbeafe;
+    --runix-indigo: #4f46e5;
+    --runix-indigo-soft: #e0e7ff;
+    --runix-violet: #7c3aed;
+    --runix-violet-soft: #ede9fe;
+    --runix-neutral: #6b7280;
+    --runix-neutral-soft: #f1f3f5;
+
+    /* Elevation */
+    --runix-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --runix-shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+    --runix-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+    --runix-shadow-lg: 0 12px 24px rgba(16, 24, 40, 0.1);
+
+    /* Shape */
+    --runix-radius-sm: 8px;
+    --runix-radius-md: 12px;
+    --runix-radius-lg: 16px;
+    --runix-radius-full: 999px;
+
+    /* Motion */
+    --runix-duration-fast: 150ms;
+    --runix-duration-base: 200ms;
+    --runix-duration-slow: 250ms;
+    --runix-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Typography */
+    --runix-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    /* Layout */
+    --runix-sidebar-width: 240px;
+    --runix-sidebar-width-collapsed: 76px;
+    --runix-topbar-height: 64px;
+    --runix-bottom-nav-height: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+        --runix-primary: #2dd4bf;
+        --runix-primary-hover: #5eead4;
+        --runix-primary-active: #99f6e4;
+        --runix-primary-soft: rgba(45, 212, 191, 0.14);
+        --runix-primary-contrast: #05201c;
+
+        --runix-background: #0b0d10;
+        --runix-surface: #16191d;
+        --runix-surface-secondary: #1d2126;
+        --runix-surface-hover: #23272d;
+        --runix-text: #f2f3f5;
+        --runix-text-secondary: #9aa1ab;
+        --runix-text-tertiary: #6b7280;
+        --runix-border: #262b31;
+        --runix-border-strong: #33393f;
+
+        --runix-success: #4ade80;
+        --runix-success-soft: rgba(74, 222, 128, 0.14);
+        --runix-warning: #fbbf24;
+        --runix-warning-soft: rgba(251, 191, 36, 0.14);
+        --runix-danger: #f87171;
+        --runix-danger-soft: rgba(248, 113, 113, 0.14);
+        --runix-info: #60a5fa;
+        --runix-info-soft: rgba(96, 165, 250, 0.14);
+        --runix-indigo: #818cf8;
+        --runix-indigo-soft: rgba(129, 140, 248, 0.14);
+        --runix-violet: #a78bfa;
+        --runix-violet-soft: rgba(167, 139, 250, 0.14);
+        --runix-neutral: #9aa1ab;
+        --runix-neutral-soft: rgba(154, 161, 171, 0.14);
+
+        --runix-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.24);
+        --runix-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.24);
+        --runix-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.36);
+        --runix-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.44);
+    }
+}
+
+:root[data-theme='dark'] {
+    --runix-primary: #2dd4bf;
+    --runix-primary-hover: #5eead4;
+    --runix-primary-active: #99f6e4;
+    --runix-primary-soft: rgba(45, 212, 191, 0.14);
+    --runix-primary-contrast: #05201c;
+
+    --runix-background: #0b0d10;
+    --runix-surface: #16191d;
+    --runix-surface-secondary: #1d2126;
+    --runix-surface-hover: #23272d;
+    --runix-text: #f2f3f5;
+    --runix-text-secondary: #9aa1ab;
+    --runix-text-tertiary: #6b7280;
+    --runix-border: #262b31;
+    --runix-border-strong: #33393f;
+
+    --runix-success: #4ade80;
+    --runix-success-soft: rgba(74, 222, 128, 0.14);
+    --runix-warning: #fbbf24;
+    --runix-warning-soft: rgba(251, 191, 36, 0.14);
+    --runix-danger: #f87171;
+    --runix-danger-soft: rgba(248, 113, 113, 0.14);
+    --runix-info: #60a5fa;
+    --runix-info-soft: rgba(96, 165, 250, 0.14);
+    --runix-indigo: #818cf8;
+    --runix-indigo-soft: rgba(129, 140, 248, 0.14);
+    --runix-violet: #a78bfa;
+    --runix-violet-soft: rgba(167, 139, 250, 0.14);
+    --runix-neutral: #9aa1ab;
+    --runix-neutral-soft: rgba(154, 161, 171, 0.14);
+
+    --runix-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.24);
+    --runix-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.24);
+    --runix-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.36);
+    --runix-shadow-lg: 0 12px 24px rgba(0, 0, 0, 0.44);
+}

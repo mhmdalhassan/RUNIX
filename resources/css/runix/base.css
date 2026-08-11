@@ -1,0 +1,98 @@
+/**
+ * Base element styling on top of Tailwind's preflight: brand font, body
+ * colors, heading scale, focus-visible ring, and the reduced-motion guard
+ * that every animated component in runix/ respects.
+ */
+
+html {
+    color-scheme: light;
+}
+
+:root[data-theme='dark'] html,
+html[data-theme='dark'] {
+    color-scheme: dark;
+}
+
+body {
+    font-family: var(--runix-font-sans);
+    background-color: var(--runix-background);
+    color: var(--runix-text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dashboard heading hierarchy: large, confident page titles; compact,
+   restrained body/data type. Utility classes so pages stay consistent
+   without repeating font-size/weight/line-height combinations inline. */
+.runix-text-display {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--runix-text);
+}
+
+.runix-text-heading {
+    font-size: 1.125rem;
+    line-height: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--runix-text);
+}
+
+.runix-text-body {
+    font-size: 0.9375rem;
+    line-height: 1.5rem;
+    color: var(--runix-text);
+}
+
+.runix-text-caption {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+    color: var(--runix-text-secondary);
+}
+
+.runix-text-data {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+}
+
+/* A single, consistent focus ring for every interactive element instead of
+   the browser default outline — kept visible (never suppressed) per §20. */
+:focus-visible {
+    outline: 2px solid var(--runix-primary);
+    outline-offset: 2px;
+    border-radius: var(--runix-radius-sm);
+}
+
+::selection {
+    background-color: var(--runix-primary-soft);
+    color: var(--runix-text);
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+.runix-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}

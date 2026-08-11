@@ -1,0 +1,70 @@
+/**
+ * Dialog chrome shared by components/modal.blade.php and
+ * components/confirm-modal.blade.php. Alpine (already a project
+ * dependency) drives the show/hide transitions; this file only styles the
+ * resulting panel.
+ */
+
+.runix-modal-panel {
+    background-color: var(--runix-surface);
+    border-radius: var(--runix-radius-lg);
+    box-shadow: var(--runix-shadow-lg);
+    border: 1px solid var(--runix-border);
+    overflow: hidden;
+}
+
+.runix-modal-body {
+    padding: 1.5rem;
+}
+
+.runix-modal-footer {
+    padding: 1rem 1.5rem;
+    background-color: var(--runix-surface-secondary);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    border-block-start: 1px solid var(--runix-border);
+}
+
+.runix-modal-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.runix-modal-icon svg {
+    width: 1.375rem;
+    height: 1.375rem;
+}
+
+.runix-modal-icon[data-tone='danger'] {
+    background-color: var(--runix-danger-soft);
+    color: var(--runix-danger);
+}
+
+.runix-modal-icon[data-tone='warning'] {
+    background-color: var(--runix-warning-soft);
+    color: var(--runix-warning);
+}
+
+.runix-modal-icon[data-tone='neutral'] {
+    background-color: var(--runix-neutral-soft);
+    color: var(--runix-text-secondary);
+}
+
+.runix-modal-title {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--runix-text);
+}
+
+.runix-modal-description {
+    font-size: 0.875rem;
+    color: var(--runix-text-secondary);
+    margin-top: 0.5rem;
+    line-height: 1.5rem;
+}

@@ -1,0 +1,37 @@
+/**
+ * Loading placeholders. Not wired to any real async flow yet (§14) — this
+ * just makes the primitives available for dispatching/GPS/refresh work
+ * later so pages don't invent their own shimmer each time.
+ */
+
+@keyframes runix-skeleton-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.runix-skeleton {
+    background-color: var(--runix-surface-secondary);
+    border-radius: var(--runix-radius-sm);
+    animation: runix-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.runix-skeleton-text {
+    height: 0.75rem;
+    border-radius: var(--runix-radius-full);
+}
+
+.runix-skeleton-circle {
+    border-radius: 50%;
+}
+
+.runix-skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1.25rem;
+}

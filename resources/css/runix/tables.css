@@ -1,0 +1,127 @@
+/**
+ * Table chrome, plus a pure-CSS "card transform" for small screens: add
+ * `data-responsive="cards"` to .runix-table-wrap and a `data-label="Column"`
+ * attribute to each <td> and the table restacks into readable rows instead
+ * of forcing horizontal scroll (§8).
+ */
+
+.runix-table-wrap {
+    background-color: var(--runix-surface);
+    border: 1px solid var(--runix-border);
+    border-radius: var(--runix-radius-lg);
+    overflow: hidden;
+}
+
+.runix-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.runix-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.runix-table thead th {
+    text-align: start;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--runix-text-tertiary);
+    background-color: var(--runix-surface-secondary);
+    border-block-end: 1px solid var(--runix-border);
+    white-space: nowrap;
+}
+
+.runix-table tbody tr {
+    border-block-end: 1px solid var(--runix-border);
+    transition: background-color var(--runix-duration-fast) var(--runix-ease);
+}
+
+.runix-table tbody tr:last-child {
+    border-block-end: none;
+}
+
+.runix-table tbody tr:hover {
+    background-color: var(--runix-surface-hover);
+}
+
+.runix-table td {
+    padding: 0.875rem 1.25rem;
+    color: var(--runix-text);
+    vertical-align: middle;
+}
+
+.runix-table-cell-secondary {
+    color: var(--runix-text-secondary);
+}
+
+.runix-table-cell-muted {
+    color: var(--runix-text-tertiary);
+}
+
+.runix-table-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.375rem;
+}
+
+.runix-table-foot {
+    padding: 1rem 1.25rem;
+    border-block-start: 1px solid var(--runix-border);
+}
+
+@media (max-width: 639px) {
+    .runix-table-wrap[data-responsive='cards'] table,
+    .runix-table-wrap[data-responsive='cards'] thead,
+    .runix-table-wrap[data-responsive='cards'] tbody,
+    .runix-table-wrap[data-responsive='cards'] th,
+    .runix-table-wrap[data-responsive='cards'] td,
+    .runix-table-wrap[data-responsive='cards'] tr {
+        display: block;
+        width: 100%;
+    }
+
+    .runix-table-wrap[data-responsive='cards'] thead {
+        display: none;
+    }
+
+    .runix-table-wrap[data-responsive='cards'] tr {
+        padding: 1rem 1.25rem;
+        border-block-end: 1px solid var(--runix-border);
+    }
+
+    .runix-table-wrap[data-responsive='cards'] tr:last-child {
+        border-block-end: none;
+    }
+
+    .runix-table-wrap[data-responsive='cards'] td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.375rem 0;
+        text-align: end;
+    }
+
+    .runix-table-wrap[data-responsive='cards'] td::before {
+        content: attr(data-label);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--runix-text-tertiary);
+        text-align: start;
+        flex-shrink: 0;
+    }
+
+    .runix-table-wrap[data-responsive='cards'] td.runix-table-actions {
+        justify-content: flex-end;
+    }
+
+    .runix-table-wrap[data-responsive='cards'] td.runix-table-actions::before {
+        content: none;
+    }
+}

@@ -1,0 +1,199 @@
+/**
+ * Form controls. Works alongside @tailwindcss/forms (already installed —
+ * it resets native control chrome) rather than fighting it.
+ */
+
+.runix-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+
+.runix-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--runix-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.runix-label-required::after {
+    content: '*';
+    color: var(--runix-danger);
+}
+
+.runix-input,
+.runix-select,
+.runix-textarea {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    color: var(--runix-text);
+    background-color: var(--runix-surface);
+    border: 1px solid var(--runix-border-strong);
+    border-radius: var(--runix-radius-sm);
+    transition: border-color var(--runix-duration-fast) var(--runix-ease),
+        box-shadow var(--runix-duration-fast) var(--runix-ease);
+}
+
+.runix-input::placeholder,
+.runix-textarea::placeholder {
+    color: var(--runix-text-tertiary);
+}
+
+.runix-input:focus,
+.runix-select:focus,
+.runix-textarea:focus {
+    outline: none;
+    border-color: var(--runix-primary);
+    box-shadow: 0 0 0 3px var(--runix-primary-soft);
+}
+
+.runix-input:disabled,
+.runix-select:disabled,
+.runix-textarea:disabled {
+    background-color: var(--runix-surface-secondary);
+    color: var(--runix-text-tertiary);
+    cursor: not-allowed;
+}
+
+.runix-input[aria-invalid='true'],
+.runix-select[aria-invalid='true'],
+.runix-textarea[aria-invalid='true'] {
+    border-color: var(--runix-danger);
+}
+
+.runix-input[aria-invalid='true']:focus,
+.runix-select[aria-invalid='true']:focus,
+.runix-textarea[aria-invalid='true']:focus {
+    box-shadow: 0 0 0 3px var(--runix-danger-soft);
+}
+
+.runix-hint {
+    font-size: 0.75rem;
+    color: var(--runix-text-tertiary);
+}
+
+.runix-error {
+    font-size: 0.75rem;
+    color: var(--runix-danger);
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.runix-error svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+}
+
+/* ---- Checkbox ---- */
+
+.runix-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+.runix-checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    /* @tailwindcss/forms replaces native checkbox rendering with
+       appearance:none + a `background-color: currentColor` check icon, so
+       `accent-color` alone (kept as a fallback) has no visible effect —
+       `color` is what actually brands the checked state. */
+    color: var(--runix-primary);
+    accent-color: var(--runix-primary);
+    cursor: pointer;
+}
+
+.runix-checkbox:focus {
+    border-color: var(--runix-primary);
+    box-shadow: 0 0 0 3px var(--runix-primary-soft);
+}
+
+.runix-checkbox-label {
+    font-size: 0.875rem;
+    color: var(--runix-text-secondary);
+    cursor: pointer;
+}
+
+/* ---- Toggle switch (settings + driver online control) ---- */
+
+.runix-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    width: 2.75rem;
+    height: 1.5rem;
+    border-radius: var(--runix-radius-full);
+    background-color: var(--runix-border-strong);
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color var(--runix-duration-base) var(--runix-ease);
+}
+
+.runix-toggle[aria-checked='true'] {
+    background-color: var(--runix-primary);
+}
+
+.runix-toggle:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.runix-toggle-thumb {
+    position: absolute;
+    top: 2px;
+    inset-inline-start: 2px;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: var(--runix-shadow-xs);
+    transition: inset-inline-start var(--runix-duration-base) var(--runix-ease);
+}
+
+.runix-toggle[aria-checked='true'] .runix-toggle-thumb {
+    inset-inline-start: 1.375rem;
+}
+
+/* ---- Form sections ---- */
+
+.runix-form-section {
+    padding-block: 1.5rem;
+    border-block-end: 1px solid var(--runix-border);
+}
+
+.runix-form-section:first-child {
+    padding-block-start: 0;
+}
+
+.runix-form-section:last-child {
+    border-block-end: none;
+    padding-block-end: 0;
+}
+
+.runix-form-section-title {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--runix-text);
+}
+
+.runix-form-section-description {
+    font-size: 0.8125rem;
+    color: var(--runix-text-secondary);
+    margin-top: 0.25rem;
+}
+
+.runix-form-section-body {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
