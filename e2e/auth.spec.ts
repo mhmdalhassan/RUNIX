@@ -5,7 +5,9 @@ test.describe('login and role-based dashboard redirect', () => {
         await loginAs(page, CREDENTIALS.superAdmin.email, CREDENTIALS.superAdmin.password);
 
         await expect(page).toHaveURL(/\/admin\/dashboard$/);
-        await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+        // exact: true — the admin dashboard also has a "Driver Overview"
+        // card heading, which a substring match would ambiguously match too.
+        await expect(page.getByRole('heading', { name: 'Overview', exact: true })).toBeVisible();
     });
 
     test('dispatcher can log in and reaches the dispatch dashboard', async ({ page }) => {

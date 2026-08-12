@@ -19,11 +19,12 @@ export const CUSTOMER_NAME = 'E2E Customer';
  * Every spec imports `test`/`expect` from here instead of
  * `@playwright/test` directly, so "no console errors" (§16) is enforced
  * uniformly rather than repeated by hand in each file. A test that
- * genuinely expects a console error would need its own opt-out; nothing
- * in this suite does.
+ * genuinely expects a console error (e.g. asserting a 404) opts out for
+ * just that message via `test.use({ allowedConsoleErrors: [/.../] })`.
  */
-export const test = base.extend({
-    page: async ({ page }, use) => {
+export const test = base.extend<{ allowedConsoleErrors: RegExp[] }>({
+    allowedConsoleErrors: [[], { option: true }],
+    page: async ({ page, allowedConsoleErrors }, use) => {
         const errors: string[] = [];
 
         page.on('console', (message) => {
@@ -38,7 +39,8 @@ export const test = base.extend({
 
         await use(page);
 
-        expect(errors, `Unexpected browser console error(s): ${errors.join(' | ')}`).toEqual([]);
+        const unexpected = errors.filter((error) => !allowedConsoleErrors.some((pattern) => pattern.test(error)));
+        expect(unexpected, `Unexpected browser console error(s): ${unexpected.join(' | ')}`).toEqual([]);
     },
 });
 

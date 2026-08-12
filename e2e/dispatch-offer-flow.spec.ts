@@ -27,7 +27,14 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
         await loginAs(page, CREDENTIALS.dispatcher.email, CREDENTIALS.dispatcher.password);
 
         await page.goto('/admin/orders/create');
-        await page.getByLabel('Customer').selectOption({ label: new RegExp(CUSTOMER_NAME) });
+        // exact: true — a plain substring match also picks up the
+        // "Customer Notes (optional)" textarea further down the form.
+        // selectOption's `label` must be an exact string, not a pattern —
+        // the option's actual text is "{name} ({phone})", so match by
+        // substring via the <option> locator instead and select on value.
+        const customerSelect = page.getByLabel('Customer', { exact: true });
+        const customerValue = await customerSelect.locator('option', { hasText: CUSTOMER_NAME }).first().getAttribute('value');
+        await customerSelect.selectOption(customerValue!);
         await page.getByLabel('Pickup Address').fill(pickup);
         await page.getByLabel('Delivery Address').fill(delivery);
         await page.getByLabel('Delivery Fee (USD)').fill('12.00');
@@ -103,7 +110,10 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
 
         await page.goto(orderPath);
         await expect(page.locator('.runix-badge').first()).toHaveText(/Accepted/);
-        await expect(page.getByText(CREDENTIALS.driverA.name)).toBeVisible();
+        // `.first()` is the order's own "Driver" field — the driver's name
+        // also reappears further down in the offer history list and its
+        // timestamp caption, both later in the DOM.
+        await expect(page.getByText(CREDENTIALS.driverA.name).first()).toBeVisible();
 
         await page.goto('/dispatch/dashboard');
         const driverARow = page.getByRole('row', { name: new RegExp(CREDENTIALS.driverA.name) });
@@ -113,11 +123,23 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
         await expect(driverBRow.getByText('No', { exact: true })).toBeVisible();
     });
 
-    test("driver B cannot open driver A's order by guessing its URL", async ({ page }) => {
-        await loginAs(page, CREDENTIALS.driverB.email, CREDENTIALS.driverB.password);
+    // Its own nested describe (still serial — nested blocks inherit the
+    // parent's mode) purely so `test.use` below can allowlist the 404
+    // this one test deliberately triggers without loosening the check for
+    // every other step in the scenario.
+    test.describe('unauthorized access', () => {
+        // The 404 this test asserts also fires a "failed to load resource"
+        // console error for the navigation itself — expected here, not a
+        // real bug, so it's allowlisted rather than failing the fixture's
+        // usual no-console-errors check.
+        test.use({ allowedConsoleErrors: [/404/] });
 
-        const response = await page.goto(`/driver/orders/${orderId}`);
+        test("driver B cannot open driver A's order by guessing its URL", async ({ page }) => {
+            await loginAs(page, CREDENTIALS.driverB.email, CREDENTIALS.driverB.password);
 
-        expect(response?.status()).toBe(404);
+            const response = await page.goto(`/driver/orders/${orderId}`);
+
+            expect(response?.status()).toBe(404);
+        });
     });
 });

@@ -19,8 +19,10 @@ const E2E_ENV = {
 };
 
 export default function globalSetup(): void {
+    // eslint-disable-next-line no-console
+    console.log('[global-setup] rebuilding runix_e2e...');
     execFileSync(
-        'php8.4',
+        'php8.3',
         ['artisan', 'migrate:fresh', '--seeder=Database\\Seeders\\E2ESeeder', '--seed', '--force'],
         { env: E2E_ENV, stdio: 'inherit' },
     );

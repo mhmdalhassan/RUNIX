@@ -73,8 +73,16 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: `php8.4 artisan serve --port=${PORT}`,
-        url: BASE_URL,
+        command: `php8.3 artisan serve --port=${PORT}`,
+        // `port`, not `url`: Playwright runs globalSetup (which migrates
+        // and seeds runix_e2e — see e2e/global-setup.ts) only *after* this
+        // readiness check passes. On a genuinely fresh runix_e2e (no
+        // tables yet), every route 500s until that migration runs, so an
+        // `url` check here — which requires a 2xx/3xx response — would
+        // never pass and this would always time out. `port` only checks
+        // that something is listening, which `php artisan serve` does well
+        // before the app can serve a real page.
+        port: PORT,
         reuseExistingServer: false,
         env: E2E_ENV,
         stdout: 'pipe',
