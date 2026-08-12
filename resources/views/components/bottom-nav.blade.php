@@ -11,6 +11,9 @@
     </x-nav-item>
 
     @if (Auth::user()->isDispatcher() || Auth::user()->isSuperAdmin())
+        <x-nav-item variant="bottom" :href="route('admin.orders.index')" :active="request()->routeIs('admin.orders.*')" icon="package">
+            {{ __('Orders') }}
+        </x-nav-item>
         <x-nav-item variant="bottom" :href="route('admin.drivers.index')" :active="request()->routeIs('admin.drivers.*')" icon="truck">
             {{ __('Drivers') }}
         </x-nav-item>

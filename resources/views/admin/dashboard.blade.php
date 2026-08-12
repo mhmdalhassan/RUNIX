@@ -17,9 +17,9 @@
                     :value="$stats['active_drivers']"
                     caption="{{ __(':count online now', ['count' => $stats['online_drivers']]) }}"
                 />
-                <x-stat-card icon="package" label="{{ __('Total Orders') }}" value="—" caption="{{ __('Unlocks with Orders') }}" muted />
-                <x-stat-card icon="dollar-sign" label="{{ __('Revenue') }}" value="—" caption="{{ __('Unlocks with Orders') }}" muted />
-                <x-stat-card icon="dollar-sign" label="{{ __('Net Profit') }}" value="—" caption="{{ __('Unlocks with Orders') }}" muted />
+                <x-stat-card icon="package" label="{{ __('Total Orders') }}" value="—" caption="{{ __('Reporting coming soon') }}" muted />
+                <x-stat-card icon="dollar-sign" label="{{ __('Revenue') }}" value="—" caption="{{ __('Reporting coming soon') }}" muted />
+                <x-stat-card icon="dollar-sign" label="{{ __('Net Profit') }}" value="—" caption="{{ __('Reporting coming soon') }}" muted />
             </div>
 
             <div class="runix-card mt-4">
@@ -58,15 +58,19 @@
                 <x-empty-state
                     icon="package"
                     title="{{ __('No orders yet') }}"
-                    description="{{ __('Order activity will appear here once Orders launches in Phase 3.') }}"
-                />
+                    description="{{ __('Recent order activity will appear here — see the full list on the Orders page.') }}"
+                >
+                    <x-slot name="action">
+                        <x-button href="{{ route('admin.orders.index') }}" variant="secondary">{{ __('View Orders') }}</x-button>
+                    </x-slot>
+                </x-empty-state>
             </x-card>
 
             <x-card title="{{ __('Driver Overview') }}">
                 <x-empty-state
                     icon="truck"
                     title="{{ __('Nothing to review') }}"
-                    description="{{ __('Per-driver delivery activity will appear here once Orders launches.') }}"
+                    description="{{ __('Per-driver delivery activity will appear here once reporting is available.') }}"
                 />
             </x-card>
         </section>

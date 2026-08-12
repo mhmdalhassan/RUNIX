@@ -61,7 +61,13 @@ $maxWidth = [
         x-transition:leave="ease-in duration-150"
         x-transition:leave-start="opacity-100"
         x-transition:leave-end="opacity-0"
-        style="background-color: color-mix(in srgb, var(--runix-text) 55%, transparent);"
+        {{--
+            Deliberately black, not var(--runix-text) — a scrim should dim
+            the page toward black in both themes. Mixing toward the theme's
+            text color inverts that in dark mode (text is near-white there),
+            washing the backdrop out light instead of dimming it.
+        --}}
+        style="background-color: rgba(0, 0, 0, 0.55);"
     ></div>
 
     <div
