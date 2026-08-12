@@ -3,7 +3,10 @@
 namespace App\Services\Orders;
 
 use App\Enums\OrderStatus;
+use App\Events\DispatchActivityUpdated;
+use App\Events\OrderStatusUpdated;
 use App\Exceptions\InvalidOrderTransitionException;
+use App\Models\Driver;
 use App\Models\Order;
 use App\Models\OrderStatusHistory;
 use App\Models\User;
@@ -20,6 +23,10 @@ use Illuminate\Support\Facades\DB;
  */
 class OrderTransitionService
 {
+    public function __construct(
+        private readonly OfferOrderService $offerService,
+    ) {}
+
     /**
      * Terminal statuses (DELIVERED/CANCELLED/FAILED) have no entry here,
      * which is what makes them terminal — canTransition() simply has
@@ -51,7 +58,11 @@ class OrderTransitionService
     /**
      * Moves $order to $to: stamps the matching `*_at` column, saves, and
      * writes exactly one OrderStatusHistory row — all inside one
-     * transaction.
+     * transaction. Also releases the assigned driver's occupancy
+     * (`current_order_id`) whenever $to is terminal — the necessary
+     * counterpart to ClaimOrderForDriverService occupying them, otherwise
+     * a driver would be stranded "busy" forever after their first
+     * delivery (see the class docblock on Driver::currentOrder()).
      *
      * @throws InvalidOrderTransitionException if $to isn't a legal hop
      *                                         from the order's current status (this also covers every
@@ -68,10 +79,11 @@ class OrderTransitionService
             }
 
             // An order can't be ACCEPTED without a driver — that hop only
-            // happens through AssignDriverService, which sets driver_id
-            // first and then calls back into this method. Blocking it
-            // here (not just in the controller/UI) means no caller,
-            // present or future, can create that invalid state.
+            // happens through AssignDriverService/RespondToOrderOfferService
+            // (both go through ClaimOrderForDriverService), which set
+            // driver_id first and then call back into this method.
+            // Blocking it here (not just in the controller/UI) means no
+            // caller, present or future, can create that invalid state.
             if ($to === OrderStatus::ACCEPTED && $order->driver_id === null) {
                 throw new InvalidOrderTransitionException($from, $to);
             }
@@ -89,6 +101,13 @@ class OrderTransitionService
 
             $order->save();
 
+            if ($to->isTerminal() && $order->driver_id !== null) {
+                Driver::query()
+                    ->where('id', $order->driver_id)
+                    ->where('current_order_id', $order->id)
+                    ->update(['current_order_id' => null]);
+            }
+
             OrderStatusHistory::create([
                 'order_id' => $order->id,
                 'from_status' => $from,
@@ -97,7 +116,27 @@ class OrderTransitionService
                 'note' => $note,
             ]);
 
-            return $order->refresh();
+            $order->refresh();
+
+            // The other half of "order becomes AVAILABLE -> eligible
+            // drivers receive the offer" (spec's core objective) — this is
+            // the one place every route to AVAILABLE funnels through
+            // (the dispatcher's status-update button, and any future
+            // automation), so it's the only place that needs to know
+            // about offering at all. OfferOrderService itself is a no-op
+            // if $order somehow isn't AVAILABLE by the time it runs, so
+            // this is safe even if that invariant is ever loosened.
+            if ($to === OrderStatus::AVAILABLE) {
+                $this->offerService->offer($order);
+            }
+
+            OrderStatusUpdated::dispatch($order);
+            DispatchActivityUpdated::dispatch(
+                sprintf('%s -> %s', $order->order_number, $to->label()),
+                $order->id,
+            );
+
+            return $order;
         });
     }
 

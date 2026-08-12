@@ -225,7 +225,8 @@ class OrderManagementTest extends TestCase
     {
         $dispatcher = User::factory()->dispatcher()->create();
         $customer = Customer::factory()->create();
-        $driver = Driver::factory()->create(['is_active' => true]);
+        // Phase 4 also requires is_online for manual assignment (spec §14).
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
 
         $this->actingAs($dispatcher)->post(route('admin.orders.store'), $this->validPayload([
             'customer_id' => $customer->id,
@@ -236,6 +237,44 @@ class OrderManagementTest extends TestCase
         $this->assertSame($driver->id, $order->driver_id);
         $this->assertSame(OrderStatus::ACCEPTED, $order->status);
         $this->assertNotNull($order->assigned_at);
+        $this->assertSame($order->id, $driver->fresh()->current_order_id);
+    }
+
+    public function test_an_offline_driver_cannot_be_assigned(): void
+    {
+        $dispatcher = User::factory()->dispatcher()->create();
+        $customer = Customer::factory()->create();
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => false]);
+
+        $response = $this->actingAs($dispatcher)->post(route('admin.orders.store'), $this->validPayload([
+            'customer_id' => $customer->id,
+            'driver_id' => $driver->id,
+        ]));
+
+        $response->assertSessionHasErrors('driver_id');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_an_occupied_driver_cannot_be_assigned(): void
+    {
+        $dispatcher = User::factory()->dispatcher()->create();
+        $customer = Customer::factory()->create();
+        $busyWith = Order::factory()->accepted()->create();
+        $driver = Driver::factory()->create([
+            'is_active' => true,
+            'is_online' => true,
+            'current_order_id' => $busyWith->id,
+        ]);
+
+        $response = $this->actingAs($dispatcher)->post(route('admin.orders.store'), $this->validPayload([
+            'customer_id' => $customer->id,
+            'driver_id' => $driver->id,
+        ]));
+
+        $response->assertSessionHasErrors('driver_id');
+        // $busyWith already exists — this only proves the *new* order
+        // wasn't created too, not that the table is empty.
+        $this->assertDatabaseCount('orders', 1);
     }
 
     public function test_an_inactive_driver_cannot_be_assigned(): void
@@ -277,7 +316,7 @@ class OrderManagementTest extends TestCase
     {
         $dispatcher = User::factory()->dispatcher()->create();
         $order = Order::factory()->create(); // PENDING, no driver
-        $driver = Driver::factory()->create(['is_active' => true]);
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
 
         $response = $this->actingAs($dispatcher)->patch(route('admin.orders.assign', $order), [
             'driver_id' => $driver->id,

@@ -6,7 +6,10 @@ use App\Http\Controllers\Admin\DriverController as AdminDriverController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Dispatch\DashboardController as DispatchDashboardController;
+use App\Http\Controllers\Driver\AvailabilityController as DriverAvailabilityController;
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
+use App\Http\Controllers\Driver\OrderController as DriverOrderController;
+use App\Http\Controllers\Driver\OrderOfferController as DriverOrderOfferController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -73,6 +76,16 @@ Route::middleware(['auth', 'verified', 'role:driver'])
     ->name('driver.')
     ->group(function () {
         Route::get('/dashboard', DriverDashboardController::class)->name('dashboard');
+
+        Route::patch('/availability', [DriverAvailabilityController::class, 'toggle'])->name('availability.toggle');
+
+        Route::get('/offers', [DriverOrderOfferController::class, 'index'])->name('offers.index');
+        Route::patch('/offers/{offer}/accept', [DriverOrderOfferController::class, 'accept'])->name('offers.accept');
+        Route::patch('/offers/{offer}/reject', [DriverOrderOfferController::class, 'reject'])->name('offers.reject');
+
+        Route::get('/orders', [DriverOrderController::class, 'index'])->name('orders.index');
+        Route::get('/orders/{order}', [DriverOrderController::class, 'show'])->name('orders.show');
+        Route::patch('/orders/{order}/transition', [DriverOrderController::class, 'transition'])->name('orders.transition');
     });
 
 Route::middleware('auth')->group(function () {

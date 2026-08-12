@@ -16,9 +16,12 @@ return new class extends Migration
             $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->string('phone')->unique();
 
-            // Availability. Do NOT add a `current_order_id` column here —
-            // a driver may hold multiple simultaneous active orders
-            // (see Driver::activeOrders() once the orders table exists).
+            // Availability. `current_order_id` was deliberately left out
+            // here — a driver could hold multiple simultaneous active
+            // orders at this point in the project. Phase 4 reverses that
+            // on purpose (a driver becomes occupied by an offer/assignment
+            // and can only hold one order at a time) and adds it via
+            // 2026_08_11_142849_add_current_order_id_to_drivers_table.php.
             $table->boolean('is_active')->default(true);
             $table->boolean('is_online')->default(false);
             $table->timestamp('last_seen_at')->nullable();

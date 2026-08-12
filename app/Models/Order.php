@@ -102,6 +102,14 @@ class Order extends Model
     }
 
     /**
+     * @return HasMany<OrderOffer, $this>
+     */
+    public function offers(): HasMany
+    {
+        return $this->hasMany(OrderOffer::class)->latest('offered_at');
+    }
+
+    /**
      * Orders that haven't reached a terminal status yet.
      *
      * @param  Builder<Order>  $query

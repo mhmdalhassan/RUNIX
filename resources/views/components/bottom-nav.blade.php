@@ -24,4 +24,13 @@
             {{ __('Staff') }}
         </x-nav-item>
     @endif
+
+    @if (Auth::user()->isDriver())
+        <x-nav-item variant="bottom" :href="route('driver.offers.index')" :active="request()->routeIs('driver.offers.*')" icon="inbox">
+            {{ __('Offers') }}
+        </x-nav-item>
+        <x-nav-item variant="bottom" :href="route('driver.orders.index')" :active="request()->routeIs('driver.orders.*')" icon="truck">
+            {{ __('Orders') }}
+        </x-nav-item>
+    @endif
 </nav>

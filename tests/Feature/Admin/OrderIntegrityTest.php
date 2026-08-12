@@ -39,7 +39,7 @@ class OrderIntegrityTest extends TestCase
     public function test_creation_rolls_back_completely_if_assignment_fails_afterwards(): void
     {
         $dispatcher = User::factory()->dispatcher()->create();
-        $driver = Driver::factory()->create(['is_active' => true]);
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
 
         OrderStatusHistory::creating(function () {
             static $calls = 0;
@@ -69,7 +69,7 @@ class OrderIntegrityTest extends TestCase
     {
         $dispatcher = User::factory()->dispatcher()->create();
         $order = Order::factory()->cancelled()->create();
-        $driver = Driver::factory()->create(['is_active' => true]);
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
 
         $response = $this->actingAs($dispatcher)->patch(route('admin.orders.assign', $order), [
             'driver_id' => $driver->id,

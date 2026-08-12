@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Models\Driver;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -57,13 +58,31 @@ class DriverRelationshipTest extends TestCase
         $this->assertDatabaseMissing('drivers', ['id' => $driver->id]);
     }
 
-    public function test_driver_table_has_no_current_order_pointer(): void
+    /**
+     * Phase 4 deliberately reverses this Phase 3 invariant: a driver can
+     * now hold at most one order at a time, occupying them via
+     * `current_order_id` (see App\Services\Orders\ClaimOrderForDriverService).
+     * This replaces the old "must not exist" assertion with its opposite
+     * rather than leaving both around contradicting each other.
+     */
+    public function test_driver_table_has_a_unique_current_order_pointer(): void
     {
-        $driver = Driver::factory()->create();
-
-        $this->assertFalse(
+        $this->assertTrue(
             Schema::hasColumn('drivers', 'current_order_id'),
-            'drivers.current_order_id must not exist — drivers may hold multiple active orders.'
+            'drivers.current_order_id must exist as of Phase 4 — a driver holds at most one order at a time.'
         );
+    }
+
+    public function test_two_drivers_cannot_both_be_occupied_by_the_same_order(): void
+    {
+        $order = Order::factory()->accepted()->create();
+        $driverA = Driver::factory()->create();
+        $driverB = Driver::factory()->create();
+
+        $driverA->update(['current_order_id' => $order->id]);
+
+        $this->expectException(QueryException::class);
+
+        $driverB->update(['current_order_id' => $order->id]);
     }
 }

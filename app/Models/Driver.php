@@ -9,7 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'phone', 'is_active', 'is_online', 'last_seen_at', 'last_latitude', 'last_longitude', 'last_accuracy', 'last_location_at'])]
+#[Fillable([
+    'user_id', 'phone', 'is_active', 'is_online', 'current_order_id',
+    'last_seen_at', 'last_latitude', 'last_longitude', 'last_accuracy', 'last_location_at',
+])]
 class Driver extends Model
 {
     /** @use HasFactory<DriverFactory> */
@@ -48,9 +51,37 @@ class Driver extends Model
     }
 
     /**
-     * Number of orders currently active for this driver. A driver may
-     * hold multiple simultaneous active orders — there is no
-     * `current_order_id`/busy flag anywhere in the schema, by design.
+     * @return HasMany<OrderOffer, $this>
+     */
+    public function offers(): HasMany
+    {
+        return $this->hasMany(OrderOffer::class);
+    }
+
+    /**
+     * The one order this driver is currently occupied with, if any.
+     *
+     * Phase 4 note: Phase 3 deliberately had no busy concept ("a driver
+     * may hold multiple simultaneous active orders"). `current_order_id`
+     * (nullable, unique) reverses that on purpose — as of the offer/accept
+     * workflow, a driver can hold at most one order at a time, enforced by
+     * the database, not just this relation. See
+     * App\Services\Orders\ClaimOrderForDriverService for the atomic claim
+     * and OrderTransitionService::transition() for where it's released
+     * again on delivery/cancellation/failure.
+     *
+     * @return BelongsTo<Order, $this>
+     */
+    public function currentOrder(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'current_order_id');
+    }
+
+    /**
+     * Number of orders currently active for this driver. In practice this
+     * is 0 or 1 as of Phase 4 (see currentOrder()'s docblock) — kept as a
+     * real count query rather than hardcoded to `currentOrder() !== null`
+     * so it stays correct if that constraint is ever relaxed again.
      */
     public function activeOrderCount(): int
     {

@@ -29,6 +29,9 @@
         'remitted' => ['tone' => 'indigo', 'label' => 'Remitted'],
         'settled' => ['tone' => 'success', 'label' => 'Settled'],
         'waived' => ['tone' => 'neutral', 'label' => 'Waived'],
+        // OrderOffer::result (Phase 4)
+        'rejected' => ['tone' => 'warning', 'label' => 'Rejected'],
+        'expired' => ['tone' => 'neutral', 'label' => 'Expired'],
     ];
 
     $key = match (true) {

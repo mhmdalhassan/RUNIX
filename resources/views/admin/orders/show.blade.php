@@ -187,6 +187,24 @@
                 </x-card>
             @endif
 
+            @if ($order->offers->isNotEmpty())
+                <x-card title="{{ __('Offers') }}">
+                    <ul class="space-y-3">
+                        @foreach ($order->offers as $offer)
+                            <li class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="runix-text-body font-medium">{{ $offer->driver->user->name }}</p>
+                                    <p class="runix-text-caption mt-0.5">
+                                        {{ __('Offered :time', ['time' => $offer->offered_at->diffForHumans()]) }}
+                                    </p>
+                                </div>
+                                <x-status-badge :status="$offer->result->value" />
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-card>
+            @endif
+
             <x-card title="{{ __('Timeline') }}">
                 <x-order-timeline :histories="$order->statusHistories" />
             </x-card>

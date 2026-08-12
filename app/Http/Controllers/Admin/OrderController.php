@@ -69,7 +69,7 @@ class OrderController extends Controller
 
         return view('admin.orders.create', [
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(),
-            'drivers' => Driver::query()->with('user')->where('is_active', true)->get(),
+            'drivers' => Driver::query()->with('user')->where('is_active', true)->where('is_online', true)->whereNull('current_order_id')->get(),
         ]);
     }
 
@@ -93,8 +93,16 @@ class OrderController extends Controller
         Gate::authorize('view', $order);
 
         return view('admin.orders.show', [
-            'order' => $order->load(['customer', 'driver.user', 'earningSetBy', 'statusHistories.changedBy']),
-            'availableDrivers' => Driver::query()->with('user')->where('is_active', true)->get(),
+            'order' => $order->load(['customer', 'driver.user', 'earningSetBy', 'statusHistories.changedBy', 'offers.driver.user']),
+            // Mirrors AssignDriverService's own eligibility checks (spec
+            // §14) — no point offering a driver in the picker who'd just
+            // be rejected on submit.
+            'availableDrivers' => Driver::query()
+                ->with('user')
+                ->where('is_active', true)
+                ->where('is_online', true)
+                ->whereNull('current_order_id')
+                ->get(),
             'allowedTransitions' => $transitions->allowedTransitions($order->status),
         ]);
     }
