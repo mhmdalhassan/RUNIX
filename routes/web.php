@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DriverController as AdminDriverController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Dispatch\DashboardController as DispatchDashboardController;
 use App\Http\Controllers\Driver\AvailabilityController as DriverAvailabilityController;
@@ -60,6 +61,11 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         Route::put('/users/{user}/password', [AdminUserController::class, 'updatePassword'])->name('users.password.update');
         Route::patch('/users/{user}/activate', [AdminUserController::class, 'activate'])->name('users.activate');
         Route::patch('/users/{user}/deactivate', [AdminUserController::class, 'deactivate'])->name('users.deactivate');
+
+        // System settings (e.g. the WhatsApp contact number) — a single
+        // edit form over Setting's key/value store, Super Admin only.
+        Route::get('/settings', [AdminSettingController::class, 'edit'])->name('settings.edit');
+        Route::put('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
     });
 
 // Driver & Customer Management: Dispatcher and Super Admin both manage
