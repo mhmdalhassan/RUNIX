@@ -11,6 +11,7 @@ use App\Http\Controllers\Driver\DashboardController as DriverDashboardController
 use App\Http\Controllers\Driver\LocationController as DriverLocationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
 use App\Http\Controllers\Driver\OrderOfferController as DriverOrderOfferController;
+use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,14 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Phase 7 §1/§7 — public, unauthenticated order tracking. `{order:tracking_token}`
+// overrides the binding key for this route only (Order::getRouteKeyName()
+// stays untouched, so every {order} route elsewhere keeps binding by id).
+// A token with no matching order throws ModelNotFoundException, which
+// renders Laravel's normal 404 — no custom handling needed, and no way to
+// distinguish "malformed token" from "token that just doesn't exist".
+Route::get('/track/{order:tracking_token}', OrderTrackingController::class)->name('track.show');
 
 // Sends every authenticated user to the dashboard for their own role.
 Route::get('/dashboard', function (Request $request) {

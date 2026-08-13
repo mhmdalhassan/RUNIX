@@ -131,6 +131,19 @@
         </div>
 
         <div class="space-y-6">
+            {{--
+                Phase 7 §C — read-only, staff-facing. This is the only place
+                in the app that surfaces the public tracking URL, built via
+                route('track.show', ...) rather than string concatenation so
+                it always matches routes/web.php's actual path. Passing the
+                token string (not the model) keeps it explicit that the URL
+                is keyed by tracking_token, never by $order->id.
+            --}}
+            <x-card title="{{ __('Customer Tracking') }}">
+                <p class="runix-text-caption">{{ __('Share this link with the customer so they can track this order without an account.') }}</p>
+                <p class="runix-text-body runix-text-data mt-2 break-all">{{ route('track.show', $order->tracking_token) }}</p>
+            </x-card>
+
             @if ($order->driver_id === null && in_array($order->status, [\App\Enums\OrderStatus::PENDING, \App\Enums\OrderStatus::AVAILABLE], true))
                 <x-card title="{{ __('Assign Driver') }}">
                     <form method="POST" action="{{ route('admin.orders.assign', $order) }}" class="space-y-3">
