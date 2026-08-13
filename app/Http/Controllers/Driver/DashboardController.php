@@ -7,6 +7,7 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -45,6 +46,9 @@ class DashboardController extends Controller
                 : collect(),
             'todaysDeliveryCount' => $driver ? $todaysDeliveredQuery()->count() : 0,
             'todaysEarnings' => $driver ? $todaysDeliveredQuery()->sum('driver_earning') : 0,
+            'deliveryHistory' => $driver
+                ? $driver->deliveryHistoryQuery()->paginate(15)
+                : new LengthAwarePaginator([], 0, 15),
         ]);
     }
 

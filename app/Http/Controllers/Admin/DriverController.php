@@ -98,6 +98,7 @@ class DriverController extends Controller
 
         return view('admin.drivers.show', [
             'driver' => $driver->load('user'),
+            'deliveryHistory' => $driver->deliveryHistoryQuery()->paginate(15),
         ]);
     }
 

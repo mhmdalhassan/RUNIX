@@ -69,6 +69,10 @@
                 @endif
             </x-card>
 
+            <x-card title="{{ __('Delivery History') }}" description="{{ __('Orders delivered and earnings per day.') }}">
+                <x-driver-delivery-history :history="$deliveryHistory" />
+            </x-card>
+
             <x-card title="{{ __('Account') }}">
                 <dl class="grid grid-cols-2 gap-4">
                     <dt class="runix-text-caption">{{ __('Phone') }}</dt>

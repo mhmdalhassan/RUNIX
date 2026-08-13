@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Database\Factories\DriverFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -86,5 +87,26 @@ class Driver extends Model
     public function activeOrderCount(): int
     {
         return $this->orders()->active()->count();
+    }
+
+    /**
+     * Per-day delivered-order count + earnings, most recent day first —
+     * the driver's own delivery history, shown on their dashboard and on
+     * the admin driver detail page. Callers paginate the result
+     * themselves (Laravel's paginate() already counts GROUP BY queries
+     * correctly, wrapping them rather than miscounting per-group rows).
+     * Read-only reporting over data that already exists — no new schema,
+     * no relation to the deferred driver earnings ledger/settlement work.
+     *
+     * @return HasMany<Order, $this>
+     */
+    public function deliveryHistoryQuery(): HasMany
+    {
+        return $this->orders()
+            ->selectRaw('DATE(delivered_at) as delivery_date, COUNT(*) as delivered_count, SUM(driver_earning) as earnings_sum')
+            ->where('status', OrderStatus::DELIVERED->value)
+            ->whereNotNull('delivered_at')
+            ->groupBy('delivery_date')
+            ->orderByDesc('delivery_date');
     }
 }

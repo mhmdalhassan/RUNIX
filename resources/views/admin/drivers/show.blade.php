@@ -48,6 +48,10 @@
             </dl>
         </x-card>
 
+        <x-card title="{{ __('Delivery History') }}" description="{{ __('Orders delivered and earnings per day.') }}">
+            <x-driver-delivery-history :history="$deliveryHistory" />
+        </x-card>
+
         <div class="flex items-center gap-4">
             @if ($driver->is_active)
                 <button
