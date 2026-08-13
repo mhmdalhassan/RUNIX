@@ -60,7 +60,11 @@ function show(message, { tone = 'success', duration = 4000 } = {}) {
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'runix-toast-close';
-    close.setAttribute('aria-label', 'Dismiss notification');
+    // Phase 9 §10 — translated server-side via components/toast-container.blade.php's
+    // window.RunixToastI18n; English fallback covers a page that doesn't
+    // render that component (no guest flow currently calls show(), but
+    // this keeps the function itself language-independent regardless).
+    close.setAttribute('aria-label', window.RunixToastI18n?.dismiss ?? 'Dismiss notification');
     close.innerHTML = CLOSE_ICON;
     close.addEventListener('click', () => dismiss(toast));
 

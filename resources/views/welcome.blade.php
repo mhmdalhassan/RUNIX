@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    dir="{{ in_array(app()->getLocale(), config('runix.locales.rtl')) ? 'rtl' : 'ltr' }}"
+>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +16,9 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
-        <div class="flex min-h-screen flex-col items-center justify-center gap-10 px-6 text-center" style="background-color: #0b0d10;">
+        <div class="relative flex min-h-screen flex-col items-center justify-center gap-10 px-6 text-center" style="background-color: #0b0d10;">
+            <x-language-switcher dark class="absolute top-6 end-6" />
+
             <img
                 src="{{ asset('images/runix-logo.png') }}"
                 alt="{{ __('RunIX — Global Logistics & Delivery') }}"

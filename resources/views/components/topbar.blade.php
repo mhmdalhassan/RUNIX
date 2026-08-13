@@ -1,8 +1,9 @@
 {{--
     Slim, persistent utility bar: brand mark (mobile only — the sidebar
-    already shows it on desktop), theme toggle, notifications, account
-    menu. The actual page title lives in the in-flow page header
-    (runix-page-header, rendered by app-shell) so it can stay large.
+    already shows it on desktop), language switcher, theme toggle,
+    notifications, account menu. The actual page title lives in the
+    in-flow page header (runix-page-header, rendered by app-shell) so it
+    can stay large.
 --}}
 
 <header class="runix-topbar">
@@ -14,6 +15,8 @@
     <div class="runix-topbar-title"></div>
 
     <div class="runix-topbar-actions">
+        <x-language-switcher />
+
         <x-theme-toggle />
 
         <button type="button" class="runix-btn runix-btn-ghost runix-btn-icon" aria-label="{{ __('Notifications') }}">

@@ -20,11 +20,11 @@ enum OrderOfferResult: string
     public function label(): string
     {
         return match ($this) {
-            self::PENDING => 'Pending',
-            self::ACCEPTED => 'Accepted',
-            self::REJECTED => 'Rejected',
-            self::EXPIRED => 'Expired',
-            self::CANCELLED => 'Cancelled',
+            self::PENDING => __('Pending'),
+            self::ACCEPTED => __('Accepted'),
+            self::REJECTED => __('Rejected'),
+            self::EXPIRED => __('Expired'),
+            self::CANCELLED => __('Cancelled'),
         };
     }
 }

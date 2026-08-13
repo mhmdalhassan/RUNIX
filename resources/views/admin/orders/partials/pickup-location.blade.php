@@ -7,6 +7,11 @@
     via navigator.geolocation. That script no-ops entirely if
     [data-pickup-location] isn't on the page, same "no container, do
     nothing" pattern as driver-location.js/driver-offers.js.
+
+    Phase 9 §10 — every status string the JS displays is rendered here
+    server-side (through __()) and read from these data-i18n-* attributes,
+    not hardcoded in the JS file, so it translates the same way the rest
+    of the page does. The JS stays language-independent.
 --}}
 @php
     $pickupLatitude = old('pickup_latitude', $order?->pickup_latitude);
@@ -14,7 +19,15 @@
     $hasLocation = $pickupLatitude !== null && $pickupLongitude !== null;
 @endphp
 
-<div class="runix-field" data-pickup-location>
+<div
+    class="runix-field"
+    data-pickup-location
+    data-i18n-unsupported="{{ __('Geolocation is not supported by this browser.') }}"
+    data-i18n-getting-location="{{ __('Getting your location…') }}"
+    data-i18n-location-selected="{{ __('Location selected') }}"
+    data-i18n-permission-denied="{{ __('Location permission was denied. You can still submit with the address only.') }}"
+    data-i18n-unavailable="{{ __('Could not determine your location. You can still submit with the address only.') }}"
+>
     <span class="runix-label">{{ __('Pickup Location') }}</span>
 
     <input type="hidden" name="pickup_latitude" value="{{ $pickupLatitude }}" data-pickup-latitude-input>

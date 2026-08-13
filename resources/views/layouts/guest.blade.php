@@ -1,5 +1,8 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    dir="{{ in_array(app()->getLocale(), config('runix.locales.rtl')) ? 'rtl' : 'ltr' }}"
+>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,10 +42,14 @@
 
             <div class="flex flex-col items-center justify-center px-6 py-12 sm:px-10">
                 <div class="w-full max-w-sm">
-                    <a href="/" class="mb-8 flex items-center justify-center gap-2.5 lg:justify-start">
-                        <x-application-logo class="h-9 w-9 shrink-0" />
-                        <span class="runix-text-heading">RunIX</span>
-                    </a>
+                    <div class="mb-8 flex items-center justify-between">
+                        <a href="/" class="flex items-center gap-2.5">
+                            <x-application-logo class="h-9 w-9 shrink-0" />
+                            <span class="runix-text-heading">RunIX</span>
+                        </a>
+
+                        <x-language-switcher />
+                    </div>
 
                     <div class="runix-card">
                         {{ $slot }}

@@ -30,6 +30,18 @@
     }
 @endphp
 
+{{--
+    Phase 9 §10 — RunixToastI18n is always set (not gated behind
+    count($flashes) like the dispatch script below), since any later
+    RunixToast.show() call — not just this page-load flash batch — needs
+    the translated dismiss label. toast.js falls back to the English
+    string if this global is ever absent (e.g. a guest page that doesn't
+    render <x-toast-container />).
+--}}
+<script>
+    window.RunixToastI18n = { dismiss: @json(__('Dismiss notification')) };
+</script>
+
 @if (count($flashes))
     <script>
         document.addEventListener('DOMContentLoaded', () => {

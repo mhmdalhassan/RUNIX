@@ -23,19 +23,21 @@ enum OrderStatus: string
     case FAILED = 'failed';
 
     /**
-     * Human-readable label for UI display.
+     * Human-readable label for UI display. Translated (Phase 9) — never
+     * the raw enum value, which stays English/snake_case regardless (it's
+     * a stored DB value and a status-badge lookup key, not UI copy).
      */
     public function label(): string
     {
         return match ($this) {
-            self::PENDING => 'Pending',
-            self::AVAILABLE => 'Available',
-            self::ACCEPTED => 'Accepted',
-            self::PICKED_UP => 'Picked Up',
-            self::ON_THE_WAY => 'On the Way',
-            self::DELIVERED => 'Delivered',
-            self::CANCELLED => 'Cancelled',
-            self::FAILED => 'Failed',
+            self::PENDING => __('Pending'),
+            self::AVAILABLE => __('Available'),
+            self::ACCEPTED => __('Accepted'),
+            self::PICKED_UP => __('Picked Up'),
+            self::ON_THE_WAY => __('On the Way'),
+            self::DELIVERED => __('Delivered'),
+            self::CANCELLED => __('Cancelled'),
+            self::FAILED => __('Failed'),
         };
     }
 

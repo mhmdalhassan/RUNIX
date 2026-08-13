@@ -11,6 +11,7 @@ use App\Http\Controllers\Driver\DashboardController as DriverDashboardController
 use App\Http\Controllers\Driver\LocationController as DriverLocationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
 use App\Http\Controllers\Driver\OrderOfferController as DriverOrderOfferController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
@@ -19,6 +20,11 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// Phase 9 — public locale switch, no auth/role gate (spec §4). Placed
+// alongside the other ungated routes below rather than inside any
+// role-scoped group, since it must work for guests too.
+Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
 // Phase 7 §1/§7 — public, unauthenticated order tracking. `{order:tracking_token}`
 // overrides the binding key for this route only (Order::getRouteKeyName()

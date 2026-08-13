@@ -10,8 +10,8 @@ enum FeePayer: string
     public function label(): string
     {
         return match ($this) {
-            self::CUSTOMER => 'Customer',
-            self::MERCHANT => 'Merchant',
+            self::CUSTOMER => __('Customer'),
+            self::MERCHANT => __('Merchant'),
         };
     }
 }

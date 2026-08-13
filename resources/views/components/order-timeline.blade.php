@@ -22,7 +22,7 @@
                 <div class="{{ $loop->last ? '' : 'pb-5' }}">
                     <p class="runix-text-body font-medium">
                         @if ($history->from_status)
-                            {{ $history->from_status->label() }} &rarr; {{ $history->to_status->label() }}
+                            {{ $history->from_status->label() }} {{ __('→') }} {{ $history->to_status->label() }}
                         @else
                             {{ __('Order created') }} ({{ $history->to_status->label() }})
                         @endif

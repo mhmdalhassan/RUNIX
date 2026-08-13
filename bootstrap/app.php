@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+        ]);
+
+        // Phase 9 — appended (not prepended) so it runs after
+        // StartSession, which the `web` group already starts earlier;
+        // reading session('locale') would fail before that.
+        $middleware->web(append: [
+            SetLocale::class,
         ]);
     })
     ->withSchedule(function (Schedule $schedule): void {

@@ -47,4 +47,24 @@ return [
         'max_location_accuracy_meters' => (float) env('RUNIX_MAX_LOCATION_ACCURACY_METERS', 100),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Localization (Phase 9)
+    |--------------------------------------------------------------------------
+    |
+    | `supported` is the whitelist App\Http\Middleware\SetLocale and
+    | App\Http\Controllers\LocaleController both validate against — never
+    | trust a raw session/route value without checking it against this
+    | first. `rtl` lists which of those locales render right-to-left; see
+    | each layout's <html dir="..."> for where it's read.
+    | config('app.locale') stays 'en' — the application's default language
+    | is unchanged by this phase.
+    |
+    */
+
+    'locales' => [
+        'supported' => ['en', 'ar'],
+        'rtl' => ['ar'],
+    ],
+
 ];
