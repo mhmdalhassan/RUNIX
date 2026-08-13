@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Dispatch\DashboardController as DispatchDashboardController;
 use App\Http\Controllers\Driver\AvailabilityController as DriverAvailabilityController;
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
+use App\Http\Controllers\Driver\LocationController as DriverLocationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
 use App\Http\Controllers\Driver\OrderOfferController as DriverOrderOfferController;
 use App\Http\Controllers\ProfileController;
@@ -78,6 +79,7 @@ Route::middleware(['auth', 'verified', 'role:driver'])
         Route::get('/dashboard', DriverDashboardController::class)->name('dashboard');
 
         Route::patch('/availability', [DriverAvailabilityController::class, 'toggle'])->name('availability.toggle');
+        Route::patch('/location', [DriverLocationController::class, 'update'])->name('location.update');
 
         Route::get('/offers', [DriverOrderOfferController::class, 'index'])->name('offers.index');
         Route::patch('/offers/{offer}/accept', [DriverOrderOfferController::class, 'accept'])->name('offers.accept');

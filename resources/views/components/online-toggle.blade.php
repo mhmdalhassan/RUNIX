@@ -4,9 +4,16 @@
     server round-trip, this one adds it). Submits a real PATCH to $action
     on click; the instant visual flip is Alpine local state layered on top
     for snappy feedback, not a substitute for the server round-trip.
+
+    `locationStatus` (Phase 5 §5) is a passive, secondary indicator only —
+    'shared'|'stale'|'not_shared'|null (null when the driver is offline,
+    since resources/js/runix/driver-location.js never submits a location
+    while offline, so there's nothing meaningful to report). It never
+    blocks going online and never implies anything about offer eligibility
+    — see EligibleDriverFinder, which never excludes on this.
 --}}
 
-@props(['online' => false, 'action'])
+@props(['online' => false, 'action', 'locationStatus' => null])
 
 <form method="POST" action="{{ $action }}" x-data="{ online: @js((bool) $online) }">
     @csrf
@@ -27,6 +34,18 @@
                         class="runix-text-caption"
                         x-text="online ? '{{ __('Visible to dispatch for new deliveries') }}' : '{{ __('You will not receive new deliveries') }}'"
                     ></p>
+
+                    @if ($online && $locationStatus)
+                        <p class="runix-text-caption mt-0.5 text-runix-text-tertiary">
+                            @if ($locationStatus === 'shared')
+                                {{ __('Location: Shared') }}
+                            @elseif ($locationStatus === 'stale')
+                                {{ __('Location: Last update a while ago') }}
+                            @else
+                                {{ __('Location: Not shared') }}
+                            @endif
+                        </p>
+                    @endif
                 </div>
             </div>
 

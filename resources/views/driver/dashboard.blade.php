@@ -7,7 +7,7 @@
         <div class="mx-auto flex max-w-xl flex-col gap-6">
             {{-- Primary action, first and unmissable — everything else on this
                  page is secondary to going online. --}}
-            <x-online-toggle :online="$driver->is_online" :action="route('driver.availability.toggle')" />
+            <x-online-toggle :online="$driver->is_online" :action="route('driver.availability.toggle')" :location-status="$locationStatus" />
 
             <div class="runix-stat-grid">
                 <x-stat-card icon="package" label="{{ __("Today's Deliveries") }}" :value="$todaysDeliveryCount" />
