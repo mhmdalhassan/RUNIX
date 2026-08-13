@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Driver;
+use App\Models\Expense;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -98,9 +99,9 @@ class DashboardReportingTest extends TestCase
         $response->assertViewHas('driverEarningsToday', 10.25);
     }
 
-    // --- Net Profit (decision: Revenue - Driver Earnings) -------------------
+    // --- Net Profit (decision: Revenue - Driver Earnings - Expenses) --------
 
-    public function test_net_profit_is_revenue_minus_driver_earnings(): void
+    public function test_net_profit_is_revenue_minus_driver_earnings_with_no_expenses_recorded(): void
     {
         Order::factory()->delivered()->create(['delivery_fee' => 20, 'driver_earning' => 14]);
         Order::factory()->delivered()->create(['delivery_fee' => 10, 'driver_earning' => 6]);
@@ -109,7 +110,33 @@ class DashboardReportingTest extends TestCase
 
         $response->assertViewHas('revenueToday', 30.0);
         $response->assertViewHas('driverEarningsToday', 20.0);
+        $response->assertViewHas('expensesToday', 0.0);
         $response->assertViewHas('netProfitToday', 10.0);
+    }
+
+    public function test_expenses_today_sums_todays_expenses_only(): void
+    {
+        Expense::factory()->create(['date' => today(), 'amount' => 15]);
+        Expense::factory()->create(['date' => today(), 'amount' => 5]);
+        Expense::factory()->create(['date' => today()->subDay(), 'amount' => 999]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard');
+
+        $response->assertViewHas('expensesToday', 20.0);
+    }
+
+    public function test_net_profit_subtracts_expenses_too(): void
+    {
+        Order::factory()->delivered()->create(['delivery_fee' => 50, 'driver_earning' => 30]);
+        Expense::factory()->create(['date' => today(), 'amount' => 8]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard');
+
+        $response->assertViewHas('revenueToday', 50.0);
+        $response->assertViewHas('driverEarningsToday', 30.0);
+        $response->assertViewHas('expensesToday', 8.0);
+        // 50 - 30 - 8 = 12
+        $response->assertViewHas('netProfitToday', 12.0);
     }
 
     // --- Recent Orders --------------------------------------------------

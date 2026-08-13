@@ -41,6 +41,9 @@
             <x-nav-item :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" icon="user">
                 {{ __('Staff') }}
             </x-nav-item>
+            <x-nav-item :href="route('admin.expenses.index')" :active="request()->routeIs('admin.expenses.*')" icon="dollar-sign">
+                {{ __('Expenses') }}
+            </x-nav-item>
             <x-nav-item :href="route('admin.settings.edit')" :active="request()->routeIs('admin.settings.*')" icon="settings">
                 {{ __('Settings') }}
             </x-nav-item>

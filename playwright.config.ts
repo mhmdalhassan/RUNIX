@@ -53,7 +53,7 @@ export default defineConfig({
     projects: [
         {
             name: 'functional',
-            testMatch: ['auth.spec.ts', 'driver-availability.spec.ts', 'dispatch-offer-flow.spec.ts', 'pickup-location.spec.ts', 'order-tracking.spec.ts', 'admin-dashboard-reporting.spec.ts', 'localization.spec.ts', 'settings-management.spec.ts'],
+            testMatch: ['auth.spec.ts', 'driver-availability.spec.ts', 'dispatch-offer-flow.spec.ts', 'pickup-location.spec.ts', 'order-tracking.spec.ts', 'admin-dashboard-reporting.spec.ts', 'localization.spec.ts', 'settings-management.spec.ts', 'expense-management.spec.ts'],
             use: { ...devices['Desktop Chrome'] },
         },
         {

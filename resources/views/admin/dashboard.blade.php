@@ -19,14 +19,7 @@
                 />
                 <x-stat-card icon="package" label="{{ __('Total Orders') }}" :value="$totalOrdersToday" caption="{{ __('Created today') }}" />
                 <x-stat-card icon="dollar-sign" label="{{ __('Revenue') }}" value="${{ number_format($revenueToday, 2) }}" caption="{{ __('Delivered today') }}" />
-                {{--
-                    Phase 8 — Net Profit is Revenue minus Driver Earnings
-                    only (both delivered-today). There's no expense-tracking
-                    model anywhere in the schema, so this is deliberately
-                    not a full P&L figure — the caption says so rather than
-                    implying it accounts for operating costs.
-                --}}
-                <x-stat-card icon="dollar-sign" label="{{ __('Net Profit') }}" value="${{ number_format($netProfitToday, 2) }}" caption="{{ __('Revenue minus driver earnings') }}" />
+                <x-stat-card icon="dollar-sign" label="{{ __('Net Profit') }}" value="${{ number_format($netProfitToday, 2) }}" caption="{{ __('Revenue minus driver earnings and expenses') }}" />
             </div>
 
             <div class="runix-card mt-4">
@@ -44,10 +37,9 @@
                         <dt class="runix-text-caption">{{ __('Driver Earnings') }}</dt>
                         <dd class="runix-text-data mt-1 font-semibold text-runix-text">${{ number_format($driverEarningsToday, 2) }}</dd>
                     </div>
-                    {{-- Phase 8 — deliberately left as a placeholder: no expense-tracking model exists anywhere in the schema. --}}
                     <div>
                         <dt class="runix-text-caption">{{ __('Expenses') }}</dt>
-                        <dd class="runix-text-data mt-1 font-semibold text-runix-text-tertiary">—</dd>
+                        <dd class="runix-text-data mt-1 font-semibold text-runix-text">${{ number_format($expensesToday, 2) }}</dd>
                     </div>
                     <div>
                         <dt class="runix-text-caption">{{ __('Customers') }}</dt>

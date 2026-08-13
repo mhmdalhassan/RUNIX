@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DriverController as AdminDriverController;
+use App\Http\Controllers\Admin\ExpenseController as AdminExpenseController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -66,6 +67,12 @@ Route::middleware(['auth', 'verified', 'role:super_admin'])
         // edit form over Setting's key/value store, Super Admin only.
         Route::get('/settings', [AdminSettingController::class, 'edit'])->name('settings.edit');
         Route::put('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
+
+        // Expenses: create + list only (append-only, see ExpenseController's
+        // own docblock) — no edit/destroy routes exist.
+        Route::get('/expenses', [AdminExpenseController::class, 'index'])->name('expenses.index');
+        Route::get('/expenses/create', [AdminExpenseController::class, 'create'])->name('expenses.create');
+        Route::post('/expenses', [AdminExpenseController::class, 'store'])->name('expenses.store');
     });
 
 // Driver & Customer Management: Dispatcher and Super Admin both manage

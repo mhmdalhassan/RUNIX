@@ -6,6 +6,7 @@ use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Driver;
+use App\Models\Expense;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,6 +32,7 @@ class DashboardController extends Controller
 
         $revenueToday = (float) (clone $deliveredToday)->sum('delivery_fee');
         $driverEarningsToday = (float) (clone $deliveredToday)->sum('driver_earning');
+        $expensesToday = (float) Expense::today()->sum('amount');
 
         return view('admin.dashboard', [
             'user' => $request->user(),
@@ -40,17 +42,18 @@ class DashboardController extends Controller
                 'customers' => Customer::where('is_active', true)->count(),
                 'staff' => User::staff()->count(),
             ],
-            // Phase 8 — Admin Reporting Dashboard. Every figure here reads
-            // orders/drivers that already exist since Phase 3; no new
-            // schema. Expenses/Net-Profit-as-a-full-P&L stay out of scope
-            // on purpose — see admin/dashboard.blade.php's own comment for
-            // why the Expenses tile is untouched.
+            // Phase 8 — Admin Reporting Dashboard. Every order/driver
+            // figure here reads data that already existed since Phase 3;
+            // no new schema for those. Expenses (and therefore a real Net
+            // Profit) came later, once Expense existed to back them —
+            // see that model's own docblock.
             'totalOrdersToday' => Order::whereDate('created_at', today())->count(),
             'activeOrdersCount' => Order::active()->count(),
             'deliveredTodayCount' => (clone $deliveredToday)->count(),
             'revenueToday' => $revenueToday,
             'driverEarningsToday' => $driverEarningsToday,
-            'netProfitToday' => $revenueToday - $driverEarningsToday,
+            'expensesToday' => $expensesToday,
+            'netProfitToday' => $revenueToday - $driverEarningsToday - $expensesToday,
             'recentOrders' => Order::with(['customer', 'driver.user'])
                 ->latest()
                 ->limit(self::RECENT_ORDERS_LIMIT)

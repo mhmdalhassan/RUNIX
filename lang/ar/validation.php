@@ -235,6 +235,9 @@ return [
         'accuracy' => 'دقة الموقع',
         'minutes' => 'الدقائق',
         'seconds' => 'الثواني',
+        'amount' => 'المبلغ',
+        'description' => 'الوصف',
+        'date' => 'التاريخ',
     ],
 
 ];
