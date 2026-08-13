@@ -10,11 +10,13 @@ use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Models\Customer;
 use App\Models\Driver;
 use App\Models\Order;
+use App\Services\Geo\HaversineDistanceCalculator;
 use App\Services\Orders\AssignDriverService;
 use App\Services\Orders\CreateOrderService;
 use App\Services\Orders\OrderTransitionService;
 use App\Services\Orders\UpdateOrderService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -88,23 +90,60 @@ class OrderController extends Controller
         return redirect()->route('admin.orders.show', $order)->with('status', 'Order created.');
     }
 
-    public function show(Order $order, OrderTransitionService $transitions): View
+    public function show(Order $order, OrderTransitionService $transitions, HaversineDistanceCalculator $distanceCalculator): View
     {
         Gate::authorize('view', $order);
 
+        // Mirrors AssignDriverService's own eligibility checks (spec
+        // §14) — no point offering a driver in the picker who'd just
+        // be rejected on submit.
+        $availableDrivers = Driver::query()
+            ->with('user')
+            ->where('is_active', true)
+            ->where('is_online', true)
+            ->whereNull('current_order_id')
+            ->get();
+
         return view('admin.orders.show', [
             'order' => $order->load(['customer', 'driver.user', 'earningSetBy', 'statusHistories.changedBy', 'offers.driver.user']),
-            // Mirrors AssignDriverService's own eligibility checks (spec
-            // §14) — no point offering a driver in the picker who'd just
-            // be rejected on submit.
-            'availableDrivers' => Driver::query()
-                ->with('user')
-                ->where('is_active', true)
-                ->where('is_online', true)
-                ->whereNull('current_order_id')
-                ->get(),
+            'availableDrivers' => $availableDrivers,
+            'driverDistancesKm' => $this->driverDistancesKm($order, $availableDrivers, $distanceCalculator),
             'allowedTransitions' => $transitions->allowedTransitions($order->status),
         ]);
+    }
+
+    /**
+     * Phase 6 §5 — display-only distance from the order's pickup point to
+     * each driver in the Assign Driver picker. Deliberately independent of
+     * App\Services\Orders\EligibleDriverFinder: it never excludes/reorders
+     * anyone, it just annotates the same list the picker already shows.
+     * Reuses the one Haversine implementation (Phase 5 §2) rather than
+     * duplicating the math.
+     *
+     * @param  Collection<int, Driver>  $drivers
+     * @return array<int, float|null> Driver id => distance in km, or null
+     *                                when it isn't computable (no pickup
+     *                                coordinates on the order, or no
+     *                                last-known location on the driver).
+     */
+    private function driverDistancesKm(Order $order, Collection $drivers, HaversineDistanceCalculator $distanceCalculator): array
+    {
+        if ($order->pickup_latitude === null || $order->pickup_longitude === null) {
+            return [];
+        }
+
+        return $drivers->mapWithKeys(function (Driver $driver) use ($order, $distanceCalculator) {
+            if ($driver->last_latitude === null || $driver->last_longitude === null) {
+                return [$driver->id => null];
+            }
+
+            return [$driver->id => $distanceCalculator->distanceInKm(
+                (float) $order->pickup_latitude,
+                (float) $order->pickup_longitude,
+                (float) $driver->last_latitude,
+                (float) $driver->last_longitude,
+            )];
+        })->all();
     }
 
     public function edit(Order $order): View

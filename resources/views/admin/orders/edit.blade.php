@@ -30,6 +30,9 @@
                         </div>
                     @else
                         <x-textarea name="pickup_address" label="{{ __('Pickup Address') }}" required rows="2">{{ old('pickup_address', $order->pickup_address) }}</x-textarea>
+
+                        @include('admin.orders.partials.pickup-location', ['order' => $order])
+
                         <x-textarea name="delivery_address" label="{{ __('Delivery Address') }}" required rows="2">{{ old('delivery_address', $order->delivery_address) }}</x-textarea>
                     @endif
                 </x-form-section>

@@ -33,6 +33,9 @@
 
                 <x-form-section title="{{ __('Pickup and Delivery') }}">
                     <x-textarea name="pickup_address" label="{{ __('Pickup Address') }}" required rows="2">{{ old('pickup_address') }}</x-textarea>
+
+                    @include('admin.orders.partials.pickup-location', ['order' => null])
+
                     <x-textarea name="delivery_address" label="{{ __('Delivery Address') }}" required rows="2">{{ old('delivery_address') }}</x-textarea>
                 </x-form-section>
 

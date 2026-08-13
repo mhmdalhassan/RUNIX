@@ -138,7 +138,24 @@
                         @method('PATCH')
                         <x-select name="driver_id" required placeholder="{{ __('Select a driver') }}">
                             @foreach ($availableDrivers as $driver)
-                                <option value="{{ $driver->id }}">{{ $driver->user->name }}</option>
+                                {{--
+                                    Phase 6 §5 — display-only distance
+                                    suffix. Absent entirely when the order
+                                    has no pickup coordinates
+                                    ($driverDistancesKm is empty); never
+                                    changes which drivers are listed or
+                                    their order.
+                                --}}
+                                <option value="{{ $driver->id }}">
+                                    {{ $driver->user->name }}
+                                    @if (array_key_exists($driver->id, $driverDistancesKm))
+                                        @if ($driverDistancesKm[$driver->id] !== null)
+                                            — {{ number_format($driverDistancesKm[$driver->id], 1) }} {{ __('km away') }}
+                                        @else
+                                            — {{ __('Location unavailable') }}
+                                        @endif
+                                    @endif
+                                </option>
                             @endforeach
                         </x-select>
                         <x-button type="submit" variant="primary" class="w-full justify-center">{{ __('Assign & Accept') }}</x-button>

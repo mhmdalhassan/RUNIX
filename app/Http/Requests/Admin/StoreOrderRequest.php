@@ -80,7 +80,8 @@ class StoreOrderRequest extends FormRequest
     /**
      * The driver-earning-override cross-field/role rule (spec §5) needs
      * the authenticated user, so it lives here rather than in a plain
-     * field rule.
+     * field rule. Phase 6 §1 adds the pickup-coordinate pair rule
+     * alongside it — both present or both absent, never a partial pair.
      */
     public function withValidator(Validator $validator): void
     {
@@ -115,5 +116,28 @@ class StoreOrderRequest extends FormRequest
                 );
             }
         });
+
+        $validator->after($this->assertPickupCoordinatePairing(...));
+    }
+
+    /**
+     * Phase 6 §1 — pickup_latitude/pickup_longitude must arrive together
+     * or not at all. Individually-nullable field rules can't express
+     * that, so it's enforced here the same way the driver-earning-override
+     * cross-field rule above is.
+     */
+    private function assertPickupCoordinatePairing(Validator $validator): void
+    {
+        $hasLatitude = $this->filled('pickup_latitude');
+        $hasLongitude = $this->filled('pickup_longitude');
+
+        if ($hasLatitude === $hasLongitude) {
+            return;
+        }
+
+        $validator->errors()->add(
+            $hasLatitude ? 'pickup_longitude' : 'pickup_latitude',
+            __('Pickup latitude and longitude must both be provided together, or both left blank.'),
+        );
     }
 }

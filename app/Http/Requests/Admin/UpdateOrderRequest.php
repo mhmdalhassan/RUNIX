@@ -63,8 +63,14 @@ class UpdateOrderRequest extends FormRequest
         return [
             'pickup_address' => Rule::when($locked, ['prohibited'], ['required', 'string']),
             'delivery_address' => Rule::when($locked, ['prohibited'], ['required', 'string']),
-            'pickup_latitude' => ['nullable', 'numeric', 'between:-90,90'],
-            'pickup_longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            // Phase 6 §1: pickup coordinates are locked together with
+            // pickup_address — both describe the same pickup point, and
+            // §16's rule is "pickup stops being casually editable once
+            // dispatch work has started", not just its address text.
+            // delivery_latitude/delivery_longitude are unrelated to Phase
+            // 6 and deliberately left as they were.
+            'pickup_latitude' => Rule::when($locked, ['prohibited'], ['nullable', 'numeric', 'between:-90,90']),
+            'pickup_longitude' => Rule::when($locked, ['prohibited'], ['nullable', 'numeric', 'between:-180,180']),
             'delivery_latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'delivery_longitude' => ['nullable', 'numeric', 'between:-180,180'],
 
@@ -90,13 +96,17 @@ class UpdateOrderRequest extends FormRequest
      * Same driver-earning-override cross-field/role rule as
      * StoreOrderRequest — skipped entirely while locked, since the
      * `prohibited` rules above already keep those fields out of a locked
-     * update altogether.
+     * update altogether. Phase 6 §1's pickup-coordinate pair rule is
+     * skipped for the same reason: `prohibited` already rejects either
+     * coordinate on a locked order, so there's nothing left to pair-check.
      */
     public function withValidator(Validator $validator): void
     {
         if ($this->isLocked()) {
             return;
         }
+
+        $validator->after($this->assertPickupCoordinatePairing(...));
 
         $validator->after(function (Validator $validator) {
             $fee = (float) $this->input('delivery_fee', 0);
@@ -129,5 +139,26 @@ class UpdateOrderRequest extends FormRequest
                 );
             }
         });
+    }
+
+    /**
+     * Phase 6 §1 — same pickup-coordinate pairing rule as
+     * StoreOrderRequest. Only ever invoked while unlocked (see
+     * withValidator() above), so `filled()` here is reading real
+     * candidate values, never fields the `prohibited` rule already wiped.
+     */
+    private function assertPickupCoordinatePairing(Validator $validator): void
+    {
+        $hasLatitude = $this->filled('pickup_latitude');
+        $hasLongitude = $this->filled('pickup_longitude');
+
+        if ($hasLatitude === $hasLongitude) {
+            return;
+        }
+
+        $validator->errors()->add(
+            $hasLatitude ? 'pickup_longitude' : 'pickup_latitude',
+            __('Pickup latitude and longitude must both be provided together, or both left blank.'),
+        );
     }
 }
