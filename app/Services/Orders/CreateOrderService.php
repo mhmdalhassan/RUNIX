@@ -3,6 +3,7 @@
 namespace App\Services\Orders;
 
 use App\Enums\FeePayer;
+use App\Enums\OrderStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Customer;
@@ -15,8 +16,9 @@ use Illuminate\Support\Facades\DB;
  * Orchestrates order creation end to end (spec §15) inside one
  * transaction — validate customer/driver/money, generate the order
  * number + tracking token, create the order in PENDING, record its
- * initial history, then assign the driver if one was supplied. If any
- * step fails, nothing commits: no partial order is ever left behind.
+ * initial history, then either assign the driver if one was supplied or
+ * publish it to every eligible driver immediately. If any step fails,
+ * nothing commits: no partial order is ever left behind.
  */
 class CreateOrderService
 {
@@ -84,8 +86,20 @@ class CreateOrderService
             $this->transitions->recordInitial($order, $actor);
 
             if (! empty($data['driver_id'])) {
+                // A specific driver was picked at creation — assign
+                // directly, same as always. AssignDriverService handles
+                // the PENDING -> AVAILABLE hop itself before claiming, so
+                // this order never sits unpublished either.
                 $driver = Driver::findOrFail($data['driver_id']);
                 $order = $this->assignDriver->assign($order, $driver, $actor);
+            } else {
+                // No driver picked — publish immediately rather than
+                // leaving the order sitting in PENDING until a dispatcher
+                // manually flips it. transition() to AVAILABLE is what
+                // triggers OfferOrderService, so this is the one call
+                // that gets the order onto every eligible driver's
+                // dashboard the moment it's created.
+                $order = $this->transitions->transition($order, OrderStatus::AVAILABLE, $actor);
             }
 
             return $order->fresh();

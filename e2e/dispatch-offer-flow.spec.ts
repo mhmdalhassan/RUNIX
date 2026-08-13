@@ -14,6 +14,11 @@ import { test, expect, loginAs, CREDENTIALS, CUSTOMER_NAME } from './fixtures';
  * moment the order goes AVAILABLE both receive an offer in the same round
  * — letting one scenario cover accept, reject, and cross-driver isolation
  * without needing a separate order per behavior.
+ *
+ * CreateOrderService now publishes a driver-less order straight to
+ * AVAILABLE (and triggers the offer round) inside the same request that
+ * creates it — there's no more separate "click Available" dispatcher
+ * step in between; see app/Services/Orders/CreateOrderService.php.
  */
 test.describe.serial('dispatcher-to-driver order lifecycle', () => {
     let orderPath = '';
@@ -23,7 +28,7 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
     const pickup = '123 Cedar St, Beirut';
     const delivery = '456 Palm Ave, Beirut';
 
-    test('dispatcher creates a new order (starts PENDING)', async ({ page }) => {
+    test('dispatcher creates a new order (published to AVAILABLE immediately)', async ({ page }) => {
         await loginAs(page, CREDENTIALS.dispatcher.email, CREDENTIALS.dispatcher.password);
 
         await page.goto('/admin/orders/create');
@@ -44,8 +49,10 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
         await expect(page).toHaveURL(/\/admin\/orders\/\d+$/);
         // `.first()` is the order's own status badge — the page also shows
         // a separate Payment Status badge that happens to read "Pending"
-        // too (both start at that value), and it renders lower in the DOM.
-        await expect(page.locator('.runix-badge').first()).toHaveText(/Pending/);
+        // too, and it renders lower in the DOM. No driver was picked at
+        // creation, so CreateOrderService publishes this straight to
+        // AVAILABLE in the same request — never stops at Pending.
+        await expect(page.locator('.runix-badge').first()).toHaveText(/Available/);
 
         orderPath = new URL(page.url()).pathname;
         orderId = orderPath.split('/').pop()!;
@@ -55,13 +62,10 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
         expect(orderNumber.length).toBeGreaterThan(0);
     });
 
-    test('dispatcher transitions the order to AVAILABLE, which offers it to both eligible drivers', async ({ page }) => {
+    test('the new order was already offered to both eligible drivers on creation', async ({ page }) => {
         await loginAs(page, CREDENTIALS.dispatcher.email, CREDENTIALS.dispatcher.password);
         await page.goto(orderPath);
 
-        await page.getByRole('button', { name: 'Available' }).click();
-
-        await expect(page).toHaveURL(orderPath);
         await expect(page.locator('.runix-badge').first()).toHaveText(/Available/);
 
         const offersCard = page.locator('.runix-card', { has: page.getByRole('heading', { name: 'Offers' }) });
@@ -72,22 +76,41 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
     test("driver B receives and rejects the offer", async ({ page }) => {
         await loginAs(page, CREDENTIALS.driverB.email, CREDENTIALS.driverB.password);
 
-        await expect(page.getByText(orderNumber)).toBeVisible();
-        await expect(page.getByText(pickup)).toBeVisible();
-        await expect(page.getByText(delivery)).toBeVisible();
+        // Scoped to this order's own card, not the bare page — orders now
+        // publish (and offer) immediately on creation, so a driver seeded
+        // online can legitimately hold more than one pending offer at
+        // once in this shared-DB suite (e.g. one left over from
+        // admin-dashboard-reporting.spec.ts's own order creation). A
+        // page-wide text/role lookup would be ambiguous the moment two
+        // offers exist; scoping by order number never is.
+        // [data-offer-expires] (order-offer-card.blade.php's own root
+        // attribute), not the generic .runix-card class — the offers
+        // page's "Order Offers" section wrapper is also a .runix-card and
+        // would otherwise match too.
+        const offerCard = page.locator('[data-offer-expires]', { has: page.getByText(orderNumber) });
+        await expect(offerCard).toBeVisible();
+        await expect(offerCard.getByText(pickup)).toBeVisible();
+        await expect(offerCard.getByText(delivery)).toBeVisible();
 
-        await page.getByRole('button', { name: 'Reject' }).click();
+        await offerCard.getByRole('button', { name: 'Reject' }).click();
 
         await expect(page).toHaveURL(/\/driver\/dashboard$/);
-        await expect(page.getByText('No offers right now')).toBeVisible();
+        // This specific offer is gone — not necessarily the whole list
+        // (see above: other unrelated offers may legitimately remain).
+        await expect(page.getByText(orderNumber)).toHaveCount(0);
     });
 
     test('driver A receives and accepts the offer', async ({ page }) => {
         await loginAs(page, CREDENTIALS.driverA.email, CREDENTIALS.driverA.password);
 
-        await expect(page.getByText(orderNumber)).toBeVisible();
+        // [data-offer-expires] (order-offer-card.blade.php's own root
+        // attribute), not the generic .runix-card class — the offers
+        // page's "Order Offers" section wrapper is also a .runix-card and
+        // would otherwise match too.
+        const offerCard = page.locator('[data-offer-expires]', { has: page.getByText(orderNumber) });
+        await expect(offerCard).toBeVisible();
 
-        await page.getByRole('button', { name: 'Accept' }).click();
+        await offerCard.getByRole('button', { name: 'Accept' }).click();
 
         await expect(page).toHaveURL(/\/driver\/dashboard$/);
     });

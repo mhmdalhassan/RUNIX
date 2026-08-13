@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\OrderStatus;
 use App\Models\Customer;
 use App\Models\Driver;
 use App\Models\Order;
@@ -14,7 +15,8 @@ use Tests\TestCase;
  * Phase 6 §8 — proves the pickup-coordinate pipeline end to end through
  * the real HTTP flow, not just at the model/factory level: dispatcher
  * submits pickup coordinates through StoreOrderRequest ->
- * CreateOrderService writes them -> transitioning the order to AVAILABLE
+ * CreateOrderService writes them and (since no driver is picked here)
+ * publishes the order straight to AVAILABLE in the same request, which
  * runs OfferOrderService -> EligibleDriverFinder (Phase 5, untouched)
  * ranks eligible drivers by proximity to those exact coordinates.
  *
@@ -63,11 +65,9 @@ class PickupCoordinatesDispatchIntegrationTest extends TestCase
         $order = Order::firstOrFail();
         $this->assertEquals(33.8938, (float) $order->pickup_latitude);
         $this->assertEquals(35.5018, (float) $order->pickup_longitude);
-
-        $transitionResponse = $this->actingAs($dispatcher)->patch(route('admin.orders.transition', $order), [
-            'to_status' => 'available',
-        ]);
-        $transitionResponse->assertRedirect();
+        // No driver picked at creation — already published to AVAILABLE
+        // (and offered) in the same request, no separate transition call.
+        $this->assertSame(OrderStatus::AVAILABLE, $order->status);
 
         $offeredDriverIds = $order->offers()->orderBy('id')->pluck('driver_id')->all();
 
@@ -107,10 +107,9 @@ class PickupCoordinatesDispatchIntegrationTest extends TestCase
         ])->assertRedirect();
 
         $order = Order::firstOrFail();
-
-        $this->actingAs($dispatcher)->patch(route('admin.orders.transition', $order), [
-            'to_status' => 'available',
-        ])->assertRedirect();
+        // No driver picked at creation — already published to AVAILABLE
+        // (and offered) in the same request, no separate transition call.
+        $this->assertSame(OrderStatus::AVAILABLE, $order->status);
 
         $offeredDriverIds = $order->offers()->orderBy('id')->pluck('driver_id')->all();
 

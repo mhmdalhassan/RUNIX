@@ -49,7 +49,9 @@ test.describe('dispatcher sets pickup location from the browser', () => {
         await page.getByRole('button', { name: 'Create Order' }).click();
 
         await expect(page).toHaveURL(/\/admin\/orders\/\d+$/);
-        await expect(page.locator('.runix-badge').first()).toHaveText(/Pending/);
+        // No driver picked at creation — CreateOrderService publishes
+        // straight to AVAILABLE in the same request.
+        await expect(page.locator('.runix-badge').first()).toHaveText(/Available/);
     });
 
     test('geolocation permission denial is handled gracefully and the order can still be submitted with the address only', async ({ page, context }) => {

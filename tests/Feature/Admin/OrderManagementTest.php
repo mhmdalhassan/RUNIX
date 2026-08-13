@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\OrderOfferResult;
 use App\Enums\OrderStatus;
 use App\Models\Customer;
 use App\Models\Driver;
@@ -95,7 +96,12 @@ class OrderManagementTest extends TestCase
         $this->assertDatabaseCount('orders', 1);
     }
 
-    public function test_created_order_defaults_to_pending(): void
+    /**
+     * An order without a driver picked at creation is published to every
+     * eligible driver immediately — it never sits waiting for a
+     * dispatcher to manually click "Available" (CreateOrderService).
+     */
+    public function test_created_order_is_available_immediately(): void
     {
         $dispatcher = User::factory()->dispatcher()->create();
         $customer = Customer::factory()->create();
@@ -105,7 +111,7 @@ class OrderManagementTest extends TestCase
         ]));
 
         $order = Order::firstOrFail();
-        $this->assertSame(OrderStatus::PENDING, $order->status);
+        $this->assertSame(OrderStatus::AVAILABLE, $order->status);
     }
 
     public function test_creation_writes_the_initial_history_record(): void
@@ -118,12 +124,74 @@ class OrderManagementTest extends TestCase
         ]));
 
         $order = Order::firstOrFail();
-        $this->assertSame(1, $order->statusHistories()->count());
+        // Two rows: the PENDING origin (recordInitial) and the immediate
+        // PENDING -> AVAILABLE publish (see
+        // test_created_order_is_available_immediately). Ordered by id,
+        // not created_at — both rows land in the same request/transaction
+        // and can share the same second-precision timestamp.
+        $this->assertSame(2, $order->statusHistories()->count());
 
-        $history = $order->statusHistories()->first();
-        $this->assertNull($history->from_status);
-        $this->assertSame(OrderStatus::PENDING, $history->to_status);
-        $this->assertSame($dispatcher->id, $history->changed_by);
+        $initial = $order->statusHistories()->oldest('id')->first();
+        $this->assertNull($initial->from_status);
+        $this->assertSame(OrderStatus::PENDING, $initial->to_status);
+        $this->assertSame($dispatcher->id, $initial->changed_by);
+
+        $published = $order->statusHistories()->latest('id')->first();
+        $this->assertSame(OrderStatus::PENDING, $published->from_status);
+        $this->assertSame(OrderStatus::AVAILABLE, $published->to_status);
+        $this->assertSame($dispatcher->id, $published->changed_by);
+    }
+
+    /**
+     * The actual point of publishing immediately: every active, online,
+     * unoccupied driver gets a PENDING offer the moment the order is
+     * created — not just a status flag flip. Goes through the real
+     * OrderTransitionService -> OfferOrderService path, same as an
+     * explicit "Available" click always has.
+     */
+    public function test_created_order_offers_itself_to_eligible_drivers_immediately(): void
+    {
+        $dispatcher = User::factory()->dispatcher()->create();
+        $customer = Customer::factory()->create();
+        $eligibleDriver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
+        $ineligibleDriver = Driver::factory()->create(['is_active' => true, 'is_online' => false]);
+
+        $this->actingAs($dispatcher)->post(route('admin.orders.store'), $this->validPayload([
+            'customer_id' => $customer->id,
+        ]));
+
+        $order = Order::firstOrFail();
+
+        $this->assertTrue($order->offers()->where('driver_id', $eligibleDriver->id)->exists());
+        $this->assertFalse($order->offers()->where('driver_id', $ineligibleDriver->id)->exists());
+    }
+
+    /**
+     * Explicitly picking a driver at creation still bypasses the open
+     * offer pool (unchanged AssignDriverService behavior) — the order
+     * goes straight to ACCEPTED with that driver. AssignDriverService's
+     * own PENDING -> AVAILABLE hop still fires the same OfferOrderService
+     * offer round everyone else gets (an unavoidable side effect of
+     * reusing the one AVAILABLE transition), but it immediately cancels
+     * whatever came out of it — so no PENDING offer is ever left
+     * standing once assignment finishes, which is what actually matters.
+     */
+    public function test_creating_an_order_with_a_chosen_driver_skips_the_offer_pool(): void
+    {
+        $dispatcher = User::factory()->dispatcher()->create();
+        $customer = Customer::factory()->create();
+        $chosenDriver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
+
+        $this->actingAs($dispatcher)->post(route('admin.orders.store'), $this->validPayload([
+            'customer_id' => $customer->id,
+            'driver_id' => $chosenDriver->id,
+        ]));
+
+        $order = Order::firstOrFail();
+
+        $this->assertSame(OrderStatus::ACCEPTED, $order->status);
+        $this->assertSame($chosenDriver->id, $order->driver_id);
+        $this->assertSame(0, $order->offers()->where('result', OrderOfferResult::PENDING->value)->count());
     }
 
     public function test_creation_generates_an_order_number_and_tracking_token(): void

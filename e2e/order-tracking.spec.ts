@@ -53,7 +53,10 @@ test.describe('public order tracking', () => {
         await expect(customerPage.getByText(orderNumber)).toBeVisible();
         await expect(customerPage.getByText('123 Cedar St, Beirut')).toBeVisible();
         await expect(customerPage.getByText('456 Palm Ave, Beirut')).toBeVisible();
-        await expect(customerPage.getByText('Pending', { exact: true })).toBeVisible();
+        // No driver picked at creation — CreateOrderService publishes
+        // straight to AVAILABLE in the same request, so the tracking page
+        // never shows a Pending status for this order.
+        await expect(customerPage.getByText('Available', { exact: true })).toBeVisible();
 
         // Never redirected to /login — this page needs no session at all.
         await expect(customerPage).toHaveURL(trackingUrl!);
