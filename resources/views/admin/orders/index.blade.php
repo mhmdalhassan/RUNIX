@@ -64,6 +64,7 @@
                             <th>{{ __('Delivery Fee') }}</th>
                             <th>{{ __('Driver Earning') }}</th>
                             <th>{{ __('Created') }}</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -87,10 +88,22 @@
                                 <td data-label="{{ __('Delivery Fee') }}" class="runix-text-data">${{ number_format($order->delivery_fee, 2) }}</td>
                                 <td data-label="{{ __('Driver Earning') }}" class="runix-text-data">${{ number_format($order->driver_earning, 2) }}</td>
                                 <td data-label="{{ __('Created') }}" class="runix-table-cell-secondary">{{ $order->created_at->diffForHumans() }}</td>
+                                <td data-label="{{ __('Actions') }}">
+                                    <div class="runix-table-actions">
+                                        {{--
+                                            No `use` import here on purpose — an inline PHP block
+                                            compiles into a method body, where a class-import `use`
+                                            statement is a parse error (see orders/show.blade.php).
+                                        --}}
+                                        @unless (in_array($order->status, [\App\Enums\OrderStatus::DELIVERED, \App\Enums\OrderStatus::CANCELLED, \App\Enums\OrderStatus::FAILED], true))
+                                            <a href="{{ route('admin.orders.edit', $order) }}" class="runix-btn runix-btn-ghost runix-btn-sm">{{ __('Edit') }}</a>
+                                        @endunless
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9">
+                                <td colspan="10">
                                     <x-empty-state
                                         icon="package"
                                         title="{{ __('No orders yet') }}"
