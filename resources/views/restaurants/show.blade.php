@@ -174,7 +174,46 @@
                                                                 <p class="runix-text-caption mt-1 line-clamp-2">{{ $item->description }}</p>
                                                             @endif
 
-                                                            <p class="runix-text-body mt-auto pt-3 font-semibold">${{ number_format((float) $item->price, 2) }}</p>
+                                                            <div class="mt-auto flex items-center justify-between gap-2 pt-3">
+                                                                <p class="runix-text-body font-semibold">${{ number_format((float) $item->price, 2) }}</p>
+
+                                                                @if ($item->is_available)
+                                                                    <div x-data>
+                                                                        <template x-if="!$store.cart.items[{{ $item->id }}]">
+                                                                            <button
+                                                                                type="button"
+                                                                                @click="$store.cart.addItem({{ $restaurant->id }}, {{ \Illuminate\Support\Js::from($restaurant->name) }}, {{ $item->id }}, {{ \Illuminate\Support\Js::from($item->name) }}, {{ (float) $item->price }})"
+                                                                                class="runix-btn runix-btn-secondary runix-btn-sm"
+                                                                            >
+                                                                                <x-icon name="plus" class="h-3.5 w-3.5" />
+                                                                                {{ __('Add') }}
+                                                                            </button>
+                                                                        </template>
+
+                                                                        <template x-if="$store.cart.items[{{ $item->id }}]">
+                                                                            <div class="flex items-center gap-1 rounded-runix-md border border-[var(--runix-border)] p-0.5">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    @click="$store.cart.updateQuantity({{ $item->id }}, ($store.cart.items[{{ $item->id }}]?.quantity ?? 1) - 1)"
+                                                                                    class="runix-btn runix-btn-ghost runix-btn-sm runix-btn-icon"
+                                                                                    aria-label="{{ __('Remove one') }}"
+                                                                                >
+                                                                                    <x-icon name="minus" class="h-3.5 w-3.5" />
+                                                                                </button>
+                                                                                <span class="runix-text-data w-4 text-center font-semibold" x-text="$store.cart.items[{{ $item->id }}]?.quantity"></span>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    @click="$store.cart.addItem({{ $restaurant->id }}, {{ \Illuminate\Support\Js::from($restaurant->name) }}, {{ $item->id }}, {{ \Illuminate\Support\Js::from($item->name) }}, {{ (float) $item->price }})"
+                                                                                    class="runix-btn runix-btn-ghost runix-btn-sm runix-btn-icon"
+                                                                                    aria-label="{{ __('Add one more') }}"
+                                                                                >
+                                                                                    <x-icon name="plus" class="h-3.5 w-3.5" />
+                                                                                </button>
+                                                                            </div>
+                                                                        </template>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 @endforeach
@@ -193,6 +232,31 @@
                     @endif
                 </div>
             </main>
+
+            {{-- Only appears once the cart holds items FROM THIS
+                 restaurant — a stray cart from a page the customer
+                 wandered off of shouldn't float over an unrelated
+                 restaurant's menu. --}}
+            <div
+                x-data
+                x-show="$store.cart.restaurantId === {{ $restaurant->id }} && $store.cart.itemCount > 0"
+                x-cloak
+                class="fixed inset-x-4 bottom-4 z-40 sm:left-1/2 sm:right-auto sm:w-full sm:max-w-md sm:-translate-x-1/2"
+            >
+                <a
+                    href="{{ route('cart.show') }}"
+                    class="runix-card flex items-center justify-between gap-3 !py-3 shadow-runix-lg hover:shadow-runix-lg"
+                >
+                    <span class="runix-text-body font-medium">
+                        <span x-text="$store.cart.itemCount"></span> {{ __('items') }} ·
+                        $<span x-text="$store.cart.total.toFixed(2)"></span>
+                    </span>
+                    <span class="runix-btn runix-btn-primary runix-btn-sm">
+                        {{ __('View Cart') }}
+                        <x-icon name="chevron-right" class="h-3.5 w-3.5 rtl:rotate-180" />
+                    </span>
+                </a>
+            </div>
 
             <x-site-footer />
         </div>

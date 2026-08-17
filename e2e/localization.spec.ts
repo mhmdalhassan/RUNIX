@@ -29,7 +29,10 @@ test.describe('Arabic language & RTL', () => {
         // .first() — the welcome page now has two "Sign in" links (header
         // + hero CTA), and this is just a translation sanity check, not
         // an assertion about how many there are.
-        await page.getByRole('link', { name: 'AR' }).click();
+        // exact: true — a loose substring match on 'AR' also matches the
+        // header's cart link (accessible name "Cart", which contains
+        // "ar" case-insensitively).
+        await page.getByRole('link', { name: 'AR', exact: true }).click();
         await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
         await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
         await expect(page.getByText('تسجيل الدخول').first()).toBeVisible();

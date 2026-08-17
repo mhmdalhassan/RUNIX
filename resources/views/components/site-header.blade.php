@@ -40,6 +40,21 @@
             {{ __('Restaurants') }}
         </a>
 
+        <a
+            href="{{ route('cart.show') }}"
+            x-data
+            class="relative inline-flex items-center {{ $dark ? 'text-white/70 hover:text-white' : 'text-runix-text-secondary hover:text-runix-text' }}"
+            aria-label="{{ __('Cart') }}"
+        >
+            <x-icon name="shopping-cart" class="h-5 w-5" />
+            <span
+                x-show="$store.cart.itemCount > 0"
+                x-cloak
+                x-text="$store.cart.itemCount"
+                class="absolute -end-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-runix-primary px-1 text-[0.625rem] font-semibold leading-none text-white"
+            ></span>
+        </a>
+
         <x-language-switcher :dark="$dark" />
 
         @auth('customer')

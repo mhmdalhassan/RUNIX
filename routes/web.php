@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\RestaurantController;
@@ -31,6 +32,8 @@ Route::get('/track/{order:tracking_token}', OrderTrackingController::class)->nam
 
 Route::get('/restaurants', [RestaurantController::class, 'index'])->name('restaurants.index');
 Route::get('/restaurants/{restaurant}', [RestaurantController::class, 'show'])->name('restaurants.show');
+
+Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
 
 
 require __DIR__.'/auth.php';

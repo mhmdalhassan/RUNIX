@@ -4,6 +4,7 @@ use App\Http\Controllers\Customer\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Customer\Auth\NewPasswordController;
 use App\Http\Controllers\Customer\Auth\RegisteredCustomerController;
 use App\Http\Controllers\Customer\CompleteCustomerProfileController;
+use App\Http\Controllers\Customer\OrderController;
 use Illuminate\Support\Facades\Route;
 
 // The customer-facing site's own auth — a fully separate guard/identity
@@ -25,5 +26,13 @@ Route::prefix('customer')->name('customer.')->group(function () {
         });
 
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+        // Placing an order needs a phone number (so a driver can reach
+        // the customer) and a delivery address — both only exist once
+        // complete-profile is done, hence the extra gate here that the
+        // routes above it don't need.
+        Route::middleware('customer.profile.require-complete')->group(function () {
+            Route::post('orders', [OrderController::class, 'store'])->name('orders.store');
+        });
     });
 });

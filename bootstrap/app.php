@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureCustomerProfileIsComplete;
 use App\Http\Middleware\EnsureUserHasRole;
 use App\Http\Middleware\RedirectIfCustomerProfileComplete;
 use App\Http\Middleware\SetLocale;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
             'customer.profile.redirect-if-complete' => RedirectIfCustomerProfileComplete::class,
+            'customer.profile.require-complete' => EnsureCustomerProfileIsComplete::class,
         ]);
 
         // Phase 9 — appended (not prepended) so it runs after

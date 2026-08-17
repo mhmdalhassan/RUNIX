@@ -20,6 +20,27 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Customer Self-Service Ordering
+    |--------------------------------------------------------------------------
+    |
+    | When a customer places their own order from a restaurant's menu
+    | (App\Services\Orders\CreateCustomerOrderService) there's no
+    | dispatcher in the loop to manually set delivery_fee/driver_earning
+    | the way Admin\OrderController's flow requires — these two flat
+    | defaults stand in for that. Independent of `cod_enabled` above:
+    | a customer order always collects the item total as cash on
+    | delivery (merchant_amount + this delivery fee = cod_amount),
+    | regardless of whether the STAFF admin UI has COD switched on.
+    |
+    */
+
+    'customer_ordering' => [
+        'default_delivery_fee' => (float) env('RUNIX_CUSTOMER_DEFAULT_DELIVERY_FEE', 3.00),
+        'default_driver_earning' => (float) env('RUNIX_CUSTOMER_DEFAULT_DRIVER_EARNING', 2.50),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Driver Location Matching (Phase 5)
     |--------------------------------------------------------------------------
     |

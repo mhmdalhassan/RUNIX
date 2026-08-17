@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 #[Fillable([
     'order_number', 'tracking_token',
-    'customer_id', 'customer_name_snapshot', 'customer_phone_snapshot',
+    'customer_id', 'customer_name_snapshot', 'customer_phone_snapshot', 'restaurant_id',
     'pickup_address', 'pickup_latitude', 'pickup_longitude',
     'delivery_address', 'delivery_latitude', 'delivery_longitude',
     'driver_id',
@@ -75,6 +75,18 @@ class Order extends Model
     }
 
     /**
+     * Only set for a customer-placed order (see
+     * App\Services\Orders\CreateCustomerOrderService) — a
+     * dispatcher-created order has no restaurant at all.
+     *
+     * @return BelongsTo<Restaurant, $this>
+     */
+    public function restaurant(): BelongsTo
+    {
+        return $this->belongsTo(Restaurant::class);
+    }
+
+    /**
      * @return BelongsTo<Driver, $this>
      */
     public function driver(): BelongsTo
@@ -107,6 +119,17 @@ class Order extends Model
     public function offers(): HasMany
     {
         return $this->hasMany(OrderOffer::class)->latest('offered_at');
+    }
+
+    /**
+     * Empty for a dispatcher-created order — see OrderItem's own
+     * docblock.
+     *
+     * @return HasMany<OrderItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 
     /**
