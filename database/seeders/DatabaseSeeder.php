@@ -16,12 +16,7 @@ class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seeded Super Admin login. Set explicitly (not the shared
-     * UserFactory default) so it's a known, documented credential
-     * rather than an implicit one — change this before any shared or
-     * production seeding.
-     */
+    
     public const SUPER_ADMIN_EMAIL = 'admin@runix.test';
 
     public const SUPER_ADMIN_PASSWORD = 'RunIX!SuperAdmin2026';
