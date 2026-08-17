@@ -39,7 +39,11 @@ class StoreCustomerRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255'],
+            // email is a unique DB column as of the customer-auth pass —
+            // it doubles as a customer's login identifier now, not just
+            // a contact detail — so this must reject duplicates with a
+            // clean validation error rather than a raw QueryException.
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', 'unique:customers,email'],
             'notes' => ['nullable', 'string'],
             'is_active' => ['boolean'],
         ];

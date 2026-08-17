@@ -5,6 +5,7 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class UpdateCustomerRequest extends FormRequest
 {
@@ -37,7 +38,10 @@ class UpdateCustomerRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:255'],
-            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255'],
+            // email is a unique DB column as of the customer-auth pass —
+            // ignore this customer's own current row so saving the form
+            // unchanged doesn't trip over its own email.
+            'email' => ['nullable', 'string', 'lowercase', 'email', 'max:255', Rule::unique('customers', 'email')->ignore($this->route('customer'))],
             'notes' => ['nullable', 'string'],
             'is_active' => ['boolean'],
         ];
