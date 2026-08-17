@@ -39,92 +39,7 @@
             </x-button>
         </div>
 
-        @forelse ($restaurant->menuCategories as $category)
-            <x-card :title="$category->name">
-                <x-slot name="actions">
-                    <div class="flex items-center gap-2">
-                        <a href="{{ route('admin.restaurants.menu-items.create', ['restaurant' => $restaurant, 'menu_category_id' => $category->id]) }}" class="runix-btn runix-btn-ghost runix-btn-sm">
-                            {{ __('Add Item') }}
-                        </a>
-                        <a href="{{ route('admin.menu-categories.edit', $category) }}" class="runix-btn runix-btn-ghost runix-btn-sm">{{ __('Edit') }}</a>
-
-                        <button
-                            type="button"
-                            class="runix-btn runix-btn-ghost runix-btn-sm"
-                            x-data=""
-                            x-on:click="$dispatch('open-modal', 'delete-category-{{ $category->id }}')"
-                        >
-                            {{ __('Delete') }}
-                        </button>
-
-                        <x-confirm-modal
-                            name="delete-category-{{ $category->id }}"
-                            title="{{ __('Delete this category?') }}"
-                            description="{{ __('This permanently removes :name and all its menu items. This cannot be undone.', ['name' => $category->name]) }}"
-                        >
-                            <x-slot name="footer">
-                                <form method="POST" action="{{ route('admin.menu-categories.destroy', $category) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-button type="submit" variant="danger">{{ __('Delete') }}</x-button>
-                                </form>
-                            </x-slot>
-                        </x-confirm-modal>
-                    </div>
-                </x-slot>
-
-                @if ($category->menuItems->isEmpty())
-                    <x-empty-state
-                        icon="store"
-                        title="{{ __('No items in this category yet') }}"
-                    />
-                @else
-                    <ul class="divide-y divide-[var(--runix-border)]">
-                        @foreach ($category->menuItems as $item)
-                            <li class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                                <div class="flex items-center gap-3">
-                                    @if ($item->photoUrl())
-                                        <img src="{{ $item->photoUrl() }}" alt="" class="h-10 w-10 shrink-0 rounded object-cover">
-                                    @endif
-                                    <div>
-                                        <p class="runix-text-body font-medium">{{ $item->name }}</p>
-                                        <p class="runix-text-caption mt-0.5">${{ number_format((float) $item->price, 2) }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-center gap-2">
-                                    <x-status-badge :status="$item->is_available ? 'available' : 'unavailable'" />
-                                    <a href="{{ route('admin.menu-items.edit', $item) }}" class="runix-btn runix-btn-ghost runix-btn-sm">{{ __('Edit') }}</a>
-
-                                    <button
-                                        type="button"
-                                        class="runix-btn runix-btn-ghost runix-btn-sm"
-                                        x-data=""
-                                        x-on:click="$dispatch('open-modal', 'delete-item-{{ $item->id }}')"
-                                    >
-                                        {{ __('Delete') }}
-                                    </button>
-
-                                    <x-confirm-modal
-                                        name="delete-item-{{ $item->id }}"
-                                        title="{{ __('Delete this item?') }}"
-                                        description="{{ __('This permanently removes :name. This cannot be undone.', ['name' => $item->name]) }}"
-                                    >
-                                        <x-slot name="footer">
-                                            <form method="POST" action="{{ route('admin.menu-items.destroy', $item) }}">
-                                                @csrf
-                                                @method('DELETE')
-                                                <x-button type="submit" variant="danger">{{ __('Delete') }}</x-button>
-                                            </form>
-                                        </x-slot>
-                                    </x-confirm-modal>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-            </x-card>
-        @empty
+        @if ($restaurant->menuCategories->isEmpty())
             <x-empty-state
                 icon="store"
                 title="{{ __('No categories yet') }}"
@@ -134,7 +49,99 @@
                     <x-button href="{{ route('admin.restaurants.menu-categories.create', $restaurant) }}" variant="primary">{{ __('Add Category') }}</x-button>
                 </x-slot>
             </x-empty-state>
-        @endforelse
+        @else
+            {{-- items-start — without it, a grid row stretches every
+                 card in it to match its tallest sibling, so a category
+                 with 2 items would grow to the height of one with 12. --}}
+            <div class="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+                @foreach ($restaurant->menuCategories as $category)
+                    <x-card :title="$category->name">
+                        <x-slot name="actions">
+                            <div class="flex items-center gap-2">
+                                <a href="{{ route('admin.restaurants.menu-items.create', ['restaurant' => $restaurant, 'menu_category_id' => $category->id]) }}" class="runix-btn runix-btn-ghost runix-btn-sm">
+                                    {{ __('Add Item') }}
+                                </a>
+                                <a href="{{ route('admin.menu-categories.edit', $category) }}" class="runix-btn runix-btn-ghost runix-btn-sm">{{ __('Edit') }}</a>
+
+                                <button
+                                    type="button"
+                                    class="runix-btn runix-btn-ghost runix-btn-sm"
+                                    x-data=""
+                                    x-on:click="$dispatch('open-modal', 'delete-category-{{ $category->id }}')"
+                                >
+                                    {{ __('Delete') }}
+                                </button>
+
+                                <x-confirm-modal
+                                    name="delete-category-{{ $category->id }}"
+                                    title="{{ __('Delete this category?') }}"
+                                    description="{{ __('This permanently removes :name and all its menu items. This cannot be undone.', ['name' => $category->name]) }}"
+                                >
+                                    <x-slot name="footer">
+                                        <form method="POST" action="{{ route('admin.menu-categories.destroy', $category) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <x-button type="submit" variant="danger">{{ __('Delete') }}</x-button>
+                                        </form>
+                                    </x-slot>
+                                </x-confirm-modal>
+                            </div>
+                        </x-slot>
+
+                        @if ($category->menuItems->isEmpty())
+                            <x-empty-state
+                                icon="store"
+                                title="{{ __('No items in this category yet') }}"
+                            />
+                        @else
+                            <ul class="divide-y divide-[var(--runix-border)]">
+                                @foreach ($category->menuItems as $item)
+                                    <li class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                                        <div class="flex items-center gap-3">
+                                            @if ($item->photoUrl())
+                                                <img src="{{ $item->photoUrl() }}" alt="" class="h-10 w-10 shrink-0 rounded object-cover">
+                                            @endif
+                                            <div>
+                                                <p class="runix-text-body font-medium">{{ $item->name }}</p>
+                                                <p class="runix-text-caption mt-0.5">${{ number_format((float) $item->price, 2) }}</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <x-status-badge :status="$item->is_available ? 'available' : 'unavailable'" />
+                                            <a href="{{ route('admin.menu-items.edit', $item) }}" class="runix-btn runix-btn-ghost runix-btn-sm">{{ __('Edit') }}</a>
+
+                                            <button
+                                                type="button"
+                                                class="runix-btn runix-btn-ghost runix-btn-sm"
+                                                x-data=""
+                                                x-on:click="$dispatch('open-modal', 'delete-item-{{ $item->id }}')"
+                                            >
+                                                {{ __('Delete') }}
+                                            </button>
+
+                                            <x-confirm-modal
+                                                name="delete-item-{{ $item->id }}"
+                                                title="{{ __('Delete this item?') }}"
+                                                description="{{ __('This permanently removes :name. This cannot be undone.', ['name' => $item->name]) }}"
+                                            >
+                                                <x-slot name="footer">
+                                                    <form method="POST" action="{{ route('admin.menu-items.destroy', $item) }}">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <x-button type="submit" variant="danger">{{ __('Delete') }}</x-button>
+                                                    </form>
+                                                </x-slot>
+                                            </x-confirm-modal>
+                                        </div>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </x-card>
+                @endforeach
+            </div>
+        @endif
 
         <a href="{{ route('admin.restaurants.index') }}" class="text-sm font-medium text-runix-text-secondary hover:text-runix-text">
             {{ __('Back to list') }}
