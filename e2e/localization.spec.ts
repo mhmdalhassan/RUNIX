@@ -26,10 +26,13 @@ test.describe('Arabic language & RTL', () => {
 
         // 3-5. Switch to Arabic from the welcome page's switcher, confirm
         // dir/lang flip and a known Arabic string becomes visible.
+        // .first() — the welcome page now has two "Sign in" links (header
+        // + hero CTA), and this is just a translation sanity check, not
+        // an assertion about how many there are.
         await page.getByRole('link', { name: 'AR' }).click();
         await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
         await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-        await expect(page.getByText('تسجيل الدخول')).toBeVisible();
+        await expect(page.getByText('تسجيل الدخول').first()).toBeVisible();
 
         // 6. Arabic is preserved navigating to login (session-based, not
         // tied to the welcome page specifically).

@@ -14,7 +14,17 @@ use Illuminate\Support\Facades\Route;
 // (Dispatcher, Driver) are provisioned by authorized staff — a Super
 // Admin-facing account-creation flow lands in a later phase, reusing
 // User::create() directly rather than a public /register endpoint.
-Route::middleware('guest')->group(function () {
+// Customers register at /customer/register instead (routes/customer.php).
+
+// Login and "forgot password" are shared with customers — one page for
+// both account types. AuthenticatedSessionController::store() tries the
+// staff (web) guard, then the customer guard, and redirects based on
+// whichever one actually matched; PasswordResetLinkController::store()
+// does the same across the two password brokers. `guest:customer`
+// alongside the plain `guest` so an already-authenticated CUSTOMER
+// visiting these routes is also redirected away — the plain `guest`
+// middleware only ever checks the default (staff) guard on its own.
+Route::middleware(['guest', 'guest:customer'])->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
 
@@ -25,7 +35,13 @@ Route::middleware('guest')->group(function () {
 
     Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
         ->name('password.email');
+});
 
+// The reset-password *step* stays staff-only here — a customer's reset
+// link points at /customer/reset-password/{token} instead (see
+// AppServiceProvider's ResetPassword::createUrlUsing()), since the token
+// itself already ties it to one broker/table.
+Route::middleware('guest')->group(function () {
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
         ->name('password.reset');
 

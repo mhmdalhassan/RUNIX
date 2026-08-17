@@ -9,6 +9,17 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
+/**
+ * The one shared /forgot-password endpoint for staff and customers,
+ * mirroring how /login is shared (see AuthenticatedSessionController) —
+ * tries the staff ('users') broker first, then falls back to the
+ * ('customers') broker only when the email genuinely isn't a staff
+ * account (not on every failure — a throttled staff request must still
+ * report the throttle, not silently try the other broker and report a
+ * misleading "no account" instead). The actual reset link a customer
+ * receives points at their own /customer/reset-password/{token} — see
+ * AppServiceProvider's ResetPassword::createUrlUsing().
+ */
 class PasswordResetLinkController extends Controller
 {
     /**
@@ -30,12 +41,11 @@ class PasswordResetLinkController extends Controller
             'email' => ['required', 'email'],
         ]);
 
-        // We will send the password reset link to this user. Once we have attempted
-        // to send the link, we will examine the response then see the message we
-        // need to show to the user. Finally, we'll send out a proper response.
-        $status = Password::sendResetLink(
-            $request->only('email')
-        );
+        $status = Password::broker('users')->sendResetLink($request->only('email'));
+
+        if ($status === Password::INVALID_USER) {
+            $status = Password::broker('customers')->sendResetLink($request->only('email'));
+        }
 
         return $status == Password::RESET_LINK_SENT
                     ? back()->with('status', __($status))

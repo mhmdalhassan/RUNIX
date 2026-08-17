@@ -1,12 +1,14 @@
 <?php
 
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\RedirectIfCustomerProfileComplete;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => EnsureUserHasRole::class,
+            'customer.profile.redirect-if-complete' => RedirectIfCustomerProfileComplete::class,
         ]);
 
         // Phase 9 — appended (not prepended) so it runs after
@@ -26,6 +29,24 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
         ]);
+
+        // Login is shared between staff and customers at one /login
+        // route (see Auth\AuthenticatedSessionController) — every
+        // unauthenticated `auth`/`auth:customer` failure, staff or
+        // customer route alike, lands on that same page now.
+        $middleware->redirectGuestsTo(fn () => route('login'));
+
+        // Where an ALREADY-authenticated visitor lands when they hit a
+        // guest-only route (the shared /login itself, or
+        // /customer/register) has to be guard-aware, not path-based:
+        // /login is reachable by both account types, so "which path was
+        // this" can't tell us which one is actually logged in — only
+        // checking the guards directly can. (`redirectGuestsTo` above
+        // doesn't have this problem — it only ever has ONE destination
+        // regardless of which guard failed.)
+        $middleware->redirectUsersTo(fn () => Auth::guard('customer')->check()
+            ? route('restaurants.index')
+            : route('dashboard'));
     })
     ->withSchedule(function (Schedule $schedule): void {
         // Backstop for offer expiry (spec §7) — see

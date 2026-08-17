@@ -26,5 +26,12 @@
         <x-button type="submit" variant="primary" class="w-full">
             {{ __('Log in') }}
         </x-button>
+
+        <p class="text-center text-sm text-runix-text-secondary">
+            {{ __("Don't have an account?") }}
+            <a href="{{ route('customer.register') }}" class="font-medium text-runix-primary hover:text-[var(--runix-primary-hover)]">
+                {{ __('Register') }}
+            </a>
+        </p>
     </form>
 </x-guest-layout>
