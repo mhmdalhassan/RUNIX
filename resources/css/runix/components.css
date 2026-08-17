@@ -44,10 +44,12 @@
 .runix-btn-primary {
     background-color: var(--runix-primary);
     color: var(--runix-primary-contrast);
+    box-shadow: var(--runix-shadow-xs);
 }
 
 .runix-btn-primary:hover:not(:disabled) {
     background-color: var(--runix-primary-hover);
+    box-shadow: var(--runix-shadow-sm);
 }
 
 .runix-btn-secondary {
@@ -195,6 +197,81 @@
     color: var(--runix-danger);
 }
 
+/* ---- Filter tabs (e.g. the dashboard's date-range filter) ---- */
+
+.runix-filter-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+    padding: 0.1875rem;
+    background-color: var(--runix-neutral-soft);
+    border-radius: var(--runix-radius-full);
+}
+
+.runix-filter-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.875rem;
+    border-radius: var(--runix-radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    color: var(--runix-text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color var(--runix-duration-fast) var(--runix-ease),
+        color var(--runix-duration-fast) var(--runix-ease);
+}
+
+.runix-filter-tab:hover {
+    color: var(--runix-text);
+}
+
+.runix-filter-tab[aria-selected='true'] {
+    background-color: var(--runix-surface);
+    color: var(--runix-text);
+    box-shadow: var(--runix-shadow-xs);
+}
+
+/* ---- Order board (driver's shared Available Orders list) ----
+
+   A container query, not a viewport (media) query — column count reacts
+   to the *board's own* rendered width, not the browser viewport. The
+   exact same markup is embedded in two very different places (the driver
+   dashboard's narrow single-column body, and the full-width standalone
+   board page); a viewport-based `sm:`/`lg:` breakpoint would force 2-3
+   columns into the dashboard's narrow parent regardless of the room
+   actually available there, cramming card content that has no space for
+   it. A container query gets this right in both places from one rule.
+
+   Two classes, not one, because a query container can't itself be the
+   *subject* of its own `@container` rule (only its descendants can) —
+   .runix-order-board-container establishes the containment context (put
+   on the stable outer wrapper, e.g. #available-orders-list) and
+   .runix-order-board is the grid inside it that actually reacts. */
+
+.runix-order-board-container {
+    container-type: inline-size;
+}
+
+.runix-order-board {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+@container (min-width: 36rem) {
+    .runix-order-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (min-width: 58rem) {
+    .runix-order-board {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
 /* ---- Avatar ---- */
 
 .runix-avatar {
@@ -253,6 +330,34 @@
     background-color: var(--runix-primary-soft);
     color: var(--runix-primary-hover);
     margin-bottom: 1rem;
+}
+
+/* Optional per-tile accent so a row of stat cards reads at a glance
+   instead of every icon being the same brand teal — purely visual,
+   defaults to the brand color when no tone is set. */
+.runix-stat-card[data-tone='success'] .runix-stat-card-icon {
+    background-color: var(--runix-success-soft);
+    color: var(--runix-success);
+}
+
+.runix-stat-card[data-tone='info'] .runix-stat-card-icon {
+    background-color: var(--runix-info-soft);
+    color: var(--runix-info);
+}
+
+.runix-stat-card[data-tone='warning'] .runix-stat-card-icon {
+    background-color: var(--runix-warning-soft);
+    color: var(--runix-warning);
+}
+
+.runix-stat-card[data-tone='violet'] .runix-stat-card-icon {
+    background-color: var(--runix-violet-soft);
+    color: var(--runix-violet);
+}
+
+.runix-stat-card[data-tone='indigo'] .runix-stat-card-icon {
+    background-color: var(--runix-indigo-soft);
+    color: var(--runix-indigo);
 }
 
 .runix-stat-card[data-muted='true'] .runix-stat-card-icon {

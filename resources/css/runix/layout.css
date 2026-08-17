@@ -105,6 +105,7 @@
 /* ---- Nav items (shared by sidebar + bottom nav) ---- */
 
 .runix-nav-item {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -127,6 +128,19 @@
 .runix-nav-item[aria-current='page'] {
     background-color: var(--runix-primary-soft);
     color: var(--runix-primary-hover);
+    font-weight: 600;
+}
+
+/* Accent bar sits in the sidebar-nav's own padding gutter, so it needs no
+   extra markup and never shifts the item's content. */
+.runix-nav-item[aria-current='page']::before {
+    content: '';
+    position: absolute;
+    inset-block: 0.375rem;
+    inset-inline-start: -0.5rem;
+    width: 3px;
+    border-radius: var(--runix-radius-full);
+    background-color: var(--runix-primary);
 }
 
 .runix-nav-item svg {

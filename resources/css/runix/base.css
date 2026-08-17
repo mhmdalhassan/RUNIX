@@ -27,9 +27,16 @@ body {
 .runix-text-display {
     font-size: 1.75rem;
     line-height: 2.25rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    letter-spacing: -0.025em;
     color: var(--runix-text);
+}
+
+@media (min-width: 640px) {
+    .runix-text-display {
+        font-size: 1.875rem;
+        line-height: 2.375rem;
+    }
 }
 
 .runix-text-heading {

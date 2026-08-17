@@ -41,8 +41,8 @@
 
                 <x-form-section title="{{ __('Financials') }}" description="{{ __('V1 accounting currency is USD. Driver earning is set manually per order.') }}">
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <x-input id="delivery_fee" name="delivery_fee" type="number" step="0.01" min="0" label="{{ __('Delivery Fee (USD)') }}" required :value="old('delivery_fee', '0.00')" />
-                        <x-input id="driver_earning" name="driver_earning" type="number" step="0.01" min="0" label="{{ __('Driver Earning (USD)') }}" required :value="old('driver_earning', '0.00')" />
+                        <x-input id="delivery_fee" name="delivery_fee" type="number" step="0.01" min="0" label="{{ __('Delivery Fee (USD)') }}" required placeholder="0.00" :value="old('delivery_fee')" />
+                        <x-input id="driver_earning" name="driver_earning" type="number" step="0.01" min="0" label="{{ __('Driver Earning (USD)') }}" required placeholder="0.00" :value="old('driver_earning')" />
                     </div>
 
                     <div id="earning-override-panel" class="hidden rounded-runix-md border border-[var(--runix-warning)] bg-[var(--runix-warning-soft)] p-4">
@@ -80,8 +80,8 @@
 
                     @if (config('runix.cod_enabled'))
                         <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <x-input name="merchant_amount" type="number" step="0.01" min="0" label="{{ __('Merchant Amount (USD)') }}" :value="old('merchant_amount', '0.00')" />
-                            <x-input name="cod_amount" type="number" step="0.01" min="0" label="{{ __('COD Amount (USD)') }}" :value="old('cod_amount', '0.00')" />
+                            <x-input name="merchant_amount" type="number" step="0.01" min="0" label="{{ __('Merchant Amount (USD)') }}" placeholder="0.00" :value="old('merchant_amount')" />
+                            <x-input name="cod_amount" type="number" step="0.01" min="0" label="{{ __('COD Amount (USD)') }}" placeholder="0.00" :value="old('cod_amount')" />
                         </div>
                     @endif
                 </x-form-section>

@@ -9,20 +9,20 @@
 
     <div class="max-w-2xl space-y-4">
         <x-card>
-            <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
+            <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
                 <div>
                     <dt class="runix-text-caption">{{ __('Phone') }}</dt>
                     <dd class="runix-text-body mt-1">{{ $customer->phone }}</dd>
                 </div>
                 <div>
                     <dt class="runix-text-caption">{{ __('Email') }}</dt>
-                    <dd class="runix-text-body mt-1">{{ $customer->email ?? '—' }}</dd>
+                    <dd class="runix-text-body mt-1 break-words">{{ $customer->email ?? '—' }}</dd>
                 </div>
                 <div>
                     <dt class="runix-text-caption">{{ __('Status') }}</dt>
                     <dd class="mt-1"><x-status-badge :status="$customer->is_active ? 'active' : 'inactive'" /></dd>
                 </div>
-                <div class="col-span-2">
+                <div class="sm:col-span-2">
                     <dt class="runix-text-caption">{{ __('Notes') }}</dt>
                     <dd class="runix-text-body mt-1">{{ $customer->notes ?? '—' }}</dd>
                 </div>

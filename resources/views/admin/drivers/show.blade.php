@@ -9,10 +9,10 @@
 
     <div class="max-w-2xl space-y-4">
         <x-card>
-            <dl class="grid grid-cols-2 gap-x-6 gap-y-4">
+            <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
                 <div>
                     <dt class="runix-text-caption">{{ __('Email') }}</dt>
-                    <dd class="runix-text-body mt-1">{{ $driver->user->email }}</dd>
+                    <dd class="runix-text-body mt-1 break-words">{{ $driver->user->email }}</dd>
                 </div>
                 <div>
                     <dt class="runix-text-caption">{{ __('Phone') }}</dt>
@@ -34,7 +34,7 @@
                     <dt class="runix-text-caption">{{ __('Active Orders') }}</dt>
                     <dd class="runix-text-body runix-text-data mt-1">{{ $driver->activeOrderCount() }}</dd>
                 </div>
-                <div class="col-span-2">
+                <div class="sm:col-span-2">
                     <dt class="runix-text-caption">{{ __('Current Location') }}</dt>
                     <dd class="runix-text-body mt-1">
                         @if ($driver->last_latitude && $driver->last_longitude)
