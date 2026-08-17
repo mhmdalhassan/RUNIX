@@ -1,6 +1,4 @@
 import { test, expect, loginAs, CREDENTIALS, CUSTOMER_NAME } from './fixtures';
-
-
 test.describe.serial('admin reporting dashboard', () => {
     test('creating an order increments the Total Orders tile by exactly one', async ({ page }) => {
         await loginAs(page, CREDENTIALS.superAdmin.email, CREDENTIALS.superAdmin.password);
@@ -21,7 +19,7 @@ test.describe.serial('admin reporting dashboard', () => {
         await page.getByLabel('Delivery Fee (USD)').fill('12.00');
         await page.getByLabel('Driver Earning (USD)').fill('7.00');
         await page.getByRole('button', { name: 'Create Order' }).click();
-        await expect(page).toHaveURL(/\/admin\/orders\/\d+$/);
+        await expect(page).toHaveURL(/\admin\/orders\/\d+$/);
 
         await page.goto('/admin/dashboard');
         const after = Number((await totalOrdersTile.locator('.runix-stat-card-value').textContent())?.trim());

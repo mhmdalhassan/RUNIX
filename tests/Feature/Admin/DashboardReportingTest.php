@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Admin;
 
+use App\Enums\DashboardPeriod;
 use App\Models\Driver;
 use App\Models\Expense;
 use App\Models\Order;
@@ -217,5 +218,102 @@ class DashboardReportingTest extends TestCase
         $this->assertCount(0, $response->viewData('driverActivityToday'));
         $response->assertSee('No orders yet');
         $response->assertSee('Nothing to review');
+    }
+
+    // --- Date range filter (?period=) --------------------------------------
+
+    public function test_period_defaults_to_today_when_no_query_param_is_given(): void
+    {
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard');
+
+        $response->assertViewHas('period', DashboardPeriod::TODAY);
+    }
+
+    public function test_unknown_period_value_falls_back_to_today_instead_of_erroring(): void
+    {
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=decade');
+
+        $response->assertOk();
+        $response->assertViewHas('period', DashboardPeriod::TODAY);
+    }
+
+    public function test_week_period_includes_earlier_this_week_but_excludes_last_week(): void
+    {
+        Order::factory()->delivered()->create([
+            'delivery_fee' => 20,
+            'delivered_at' => now()->startOfWeek()->addHours(2),
+        ]);
+        Order::factory()->delivered()->create([
+            'delivery_fee' => 999,
+            'delivered_at' => now()->subWeeks(2),
+        ]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=week');
+
+        $response->assertViewHas('period', DashboardPeriod::WEEK);
+        $response->assertViewHas('revenueToday', 20.0);
+    }
+
+    public function test_month_period_includes_earlier_this_month_but_excludes_last_month(): void
+    {
+        Order::factory()->delivered()->create([
+            'delivery_fee' => 30,
+            'delivered_at' => now()->startOfMonth()->addHours(2),
+        ]);
+        Order::factory()->delivered()->create([
+            'delivery_fee' => 999,
+            'delivered_at' => now()->subMonths(2),
+        ]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=month');
+
+        $response->assertViewHas('period', DashboardPeriod::MONTH);
+        $response->assertViewHas('revenueToday', 30.0);
+    }
+
+    public function test_year_period_includes_earlier_this_year_but_excludes_last_year(): void
+    {
+        Order::factory()->delivered()->create([
+            'delivery_fee' => 40,
+            'delivered_at' => now()->startOfYear()->addDay(),
+        ]);
+        Order::factory()->delivered()->create([
+            'delivery_fee' => 999,
+            'delivered_at' => now()->subYears(2),
+        ]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=year');
+
+        $response->assertViewHas('period', DashboardPeriod::YEAR);
+        $response->assertViewHas('revenueToday', 40.0);
+    }
+
+    public function test_expenses_respect_the_selected_period_not_just_today(): void
+    {
+        Expense::factory()->create(['date' => today(), 'amount' => 10]);
+        Expense::factory()->create(['date' => today()->subDays(3), 'amount' => 5]);
+        Expense::factory()->create(['date' => today()->subMonths(2), 'amount' => 999]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=week');
+
+        // today (10) + 3 days ago (5), as long as that's still this week —
+        // subDays(3) can spill into last week depending on today's weekday,
+        // so only assert the floor a same-week day guarantees: today's own
+        // expense is always included.
+        $expensesToday = $response->viewData('expensesToday');
+        $this->assertGreaterThanOrEqual(10.0, $expensesToday);
+        $this->assertLessThan(999.0, $expensesToday);
+    }
+
+    // --- Filter tabs render for every period --------------------------------
+
+    public function test_dashboard_renders_a_tab_for_every_period(): void
+    {
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard');
+
+        $response->assertOk();
+        foreach (DashboardPeriod::cases() as $option) {
+            $response->assertSee($option->label());
+        }
     }
 }

@@ -8,22 +8,42 @@
 
     <div class="space-y-8">
         <section>
-            <h2 class="runix-text-heading mb-4">{{ __('Today') }}</h2>
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                {{-- Static label, not $period->label() — the tab bar right
+                     next to it already names the selected period, so
+                     repeating it here (e.g. "This Week" / "This Week") was
+                     pure duplication. --}}
+                <h2 class="runix-text-heading">{{ __('Summary') }}</h2>
+
+                <div class="runix-filter-tabs" role="tablist" aria-label="{{ __('Date range') }}">
+                    @foreach ($periods as $option)
+                        <a
+                            href="{{ route('admin.dashboard', ['period' => $option->value]) }}"
+                            role="tab"
+                            aria-selected="{{ $option === $period ? 'true' : 'false' }}"
+                            class="runix-filter-tab"
+                        >
+                            {{ $option->label() }}
+                        </a>
+                    @endforeach
+                </div>
+            </div>
 
             <div class="runix-stat-grid">
                 <x-stat-card
                     icon="truck"
+                    tone="info"
                     label="{{ __('Active Drivers') }}"
                     :value="$stats['active_drivers']"
                     caption="{{ __(':count online now', ['count' => $stats['online_drivers']]) }}"
                 />
-                <x-stat-card icon="package" label="{{ __('Total Orders') }}" :value="$totalOrdersToday" caption="{{ __('Created today') }}" />
-                <x-stat-card icon="dollar-sign" label="{{ __('Revenue') }}" value="${{ number_format($revenueToday, 2) }}" caption="{{ __('Delivered today') }}" />
-                <x-stat-card icon="dollar-sign" label="{{ __('Net Profit') }}" value="${{ number_format($netProfitToday, 2) }}" caption="{{ __('Revenue minus driver earnings and expenses') }}" />
+                <x-stat-card icon="package" tone="indigo" label="{{ __('Total Orders') }}" :value="$totalOrdersToday" caption="{{ $period->createdCaption() }}" />
+                <x-stat-card icon="dollar-sign" tone="success" label="{{ __('Revenue') }}" value="${{ number_format($revenueToday, 2) }}" caption="{{ $period->deliveredCaption() }}" />
+                <x-stat-card icon="dollar-sign" tone="violet" label="{{ __('Net Profit') }}" value="${{ number_format($netProfitToday, 2) }}" caption="{{ __('Revenue minus driver earnings and expenses') }}" />
             </div>
 
             <div class="runix-card mt-4">
-                <h3 class="runix-text-caption font-semibold uppercase tracking-wide">{{ __("Today's Breakdown") }}</h3>
+                <h3 class="runix-text-caption font-semibold uppercase tracking-wide">{{ $period->breakdownTitle() }}</h3>
                 <dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 lg:grid-cols-6">
                     <div>
                         <dt class="runix-text-caption">{{ __('Active Orders') }}</dt>
@@ -98,7 +118,7 @@
                                 <div>
                                     <p class="runix-text-body font-medium">{{ $activity->driver->user->name }}</p>
                                     <p class="runix-text-caption mt-0.5">
-                                        {{ trans_choice(':count delivery today|:count deliveries today', $activity->delivered_count, ['count' => $activity->delivered_count]) }}
+                                        {{ trans_choice($period->deliveryCountPhrase(), $activity->delivered_count, ['count' => $activity->delivered_count]) }}
                                     </p>
                                 </div>
                                 <p class="runix-text-data font-semibold">${{ number_format($activity->earnings_sum, 2) }}</p>

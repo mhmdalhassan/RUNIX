@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * A simple, free-text expense record (amount + description + date) — no
@@ -46,5 +47,19 @@ class Expense extends Model
     public function scopeToday(Builder $query): Builder
     {
         return $query->whereDate('date', today());
+    }
+
+    /**
+     * Inclusive calendar-date range — used by the admin dashboard's
+     * period filter (App\Enums\DashboardPeriod). Compares plain dates
+     * rather than $start/$end's time-of-day, since `date` is a DATE
+     * column with no time component of its own.
+     *
+     * @param  Builder<Expense>  $query
+     * @return Builder<Expense>
+     */
+    public function scopeBetweenDates(Builder $query, Carbon $start, Carbon $end): Builder
+    {
+        return $query->whereBetween('date', [$start->toDateString(), $end->toDateString()]);
     }
 }
