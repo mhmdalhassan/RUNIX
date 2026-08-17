@@ -55,7 +55,7 @@ class RespondToOrderOfferService
                     ->where('result', OrderOfferResult::PENDING->value)
                     ->update(['result' => OrderOfferResult::CANCELLED->value, 'responded_at' => now()]);
 
-                OrderTaken::dispatch($order->id);
+                OrderTaken::dispatch($order->id, $offer->driver->user->name);
                 OrderStatusUpdated::dispatch($order);
                 DispatchActivityUpdated::dispatch(
                     sprintf('%s accepted by %s', $order->order_number, $offer->driver->user->name),

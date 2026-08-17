@@ -19,6 +19,15 @@ import { test, expect, loginAs, CREDENTIALS, CUSTOMER_NAME } from './fixtures';
  * AVAILABLE (and triggers the offer round) inside the same request that
  * creates it — there's no more separate "click Available" dispatcher
  * step in between; see app/Services/Orders/CreateOrderService.php.
+ *
+ * Two driver-facing surfaces both still work and are both exercised
+ * below, deliberately: driver B rejects via the private per-driver offer
+ * inbox at /driver/offers (still fully functional, just no longer linked
+ * from the nav — see OrderOfferController's docblock), and driver A
+ * accepts via the shared "Available Orders" board embedded on
+ * /driver/dashboard (App\Http\Controllers\Driver\
+ * AvailableOrdersController) — the driver's primary "find work" surface
+ * now.
  */
 test.describe.serial('dispatcher-to-driver order lifecycle', () => {
     let orderPath = '';
@@ -73,8 +82,9 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
         await expect(offersCard.getByText(CREDENTIALS.driverB.name)).toBeVisible();
     });
 
-    test("driver B receives and rejects the offer", async ({ page }) => {
+    test("driver B receives and rejects the offer (via the still-live /driver/offers inbox)", async ({ page }) => {
         await loginAs(page, CREDENTIALS.driverB.email, CREDENTIALS.driverB.password);
+        await page.goto('/driver/offers');
 
         // Scoped to this order's own card, not the bare page — orders now
         // publish (and offer) immediately on creation, so a driver seeded
@@ -85,8 +95,8 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
         // offers exist; scoping by order number never is.
         // [data-offer-expires] (order-offer-card.blade.php's own root
         // attribute), not the generic .runix-card class — the offers
-        // page's "Order Offers" section wrapper is also a .runix-card and
-        // would otherwise match too.
+        // page's own section wrapper is also a .runix-card and would
+        // otherwise match too.
         const offerCard = page.locator('[data-offer-expires]', { has: page.getByText(orderNumber) });
         await expect(offerCard).toBeVisible();
         await expect(offerCard.getByText(pickup)).toBeVisible();
@@ -94,23 +104,26 @@ test.describe.serial('dispatcher-to-driver order lifecycle', () => {
 
         await offerCard.getByRole('button', { name: 'Reject' }).click();
 
-        await expect(page).toHaveURL(/\/driver\/dashboard$/);
+        await expect(page).toHaveURL('/driver/offers');
         // This specific offer is gone — not necessarily the whole list
         // (see above: other unrelated offers may legitimately remain).
         await expect(page.getByText(orderNumber)).toHaveCount(0);
     });
 
-    test('driver A receives and accepts the offer', async ({ page }) => {
+    test('driver A accepts it off the shared Available Orders board', async ({ page }) => {
         await loginAs(page, CREDENTIALS.driverA.email, CREDENTIALS.driverA.password);
+        await expect(page).toHaveURL(/\/driver\/dashboard$/);
 
-        // [data-offer-expires] (order-offer-card.blade.php's own root
-        // attribute), not the generic .runix-card class — the offers
-        // page's "Order Offers" section wrapper is also a .runix-card and
-        // would otherwise match too.
-        const offerCard = page.locator('[data-offer-expires]', { has: page.getByText(orderNumber) });
-        await expect(offerCard).toBeVisible();
+        // [data-order-id] (available-order-card.blade.php's own root
+        // attribute), not the generic .runix-card class — the board's
+        // own "Available Orders" section wrapper is also a .runix-card
+        // and would otherwise match too.
+        const orderCard = page.locator('[data-order-id]', { has: page.getByText(orderNumber) });
+        await expect(orderCard).toBeVisible();
+        await expect(orderCard.getByText(pickup)).toBeVisible();
+        await expect(orderCard.getByText(delivery)).toBeVisible();
 
-        await offerCard.getByRole('button', { name: 'Accept' }).click();
+        await orderCard.getByRole('button', { name: 'Accept' }).click();
 
         await expect(page).toHaveURL(/\/driver\/dashboard$/);
     });

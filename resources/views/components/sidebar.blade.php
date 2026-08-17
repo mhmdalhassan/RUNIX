@@ -35,6 +35,9 @@
             <x-nav-item :href="route('admin.customers.index')" :active="request()->routeIs('admin.customers.*')" icon="users">
                 {{ __('Customers') }}
             </x-nav-item>
+            <x-nav-item :href="route('admin.restaurants.index')" :active="request()->routeIs('admin.restaurants.*', 'admin.menu-categories.*', 'admin.menu-items.*')" icon="store">
+                {{ __('Restaurants') }}
+            </x-nav-item>
         @endif
 
         @if (Auth::user()->isSuperAdmin())
@@ -50,10 +53,10 @@
         @endif
 
         @if (Auth::user()->isDriver())
-            <x-nav-item :href="route('driver.offers.index')" :active="request()->routeIs('driver.offers.*')" icon="inbox">
-                {{ __('Offers') }}
+            <x-nav-item :href="route('driver.orders.available')" :active="request()->routeIs('driver.orders.available*')" icon="package">
+                {{ __('Available Orders') }}
             </x-nav-item>
-            <x-nav-item :href="route('driver.orders.index')" :active="request()->routeIs('driver.orders.*')" icon="truck">
+            <x-nav-item :href="route('driver.orders.index')" :active="request()->routeIs('driver.orders.index', 'driver.orders.show', 'driver.orders.transition')" icon="truck">
                 {{ __('My Orders') }}
             </x-nav-item>
         @endif

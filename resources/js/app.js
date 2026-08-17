@@ -3,6 +3,7 @@ import Alpine from 'alpinejs';
 import './runix/theme';
 import './runix/toast';
 import './runix/driver-offers';
+import './runix/driver-available-orders';
 import './runix/driver-location';
 import './runix/pickup-location';
 import './echo';

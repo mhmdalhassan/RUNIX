@@ -122,4 +122,19 @@ class Order extends Model
             OrderStatus::activeStatuses(),
         ));
     }
+
+    /**
+     * Orders sitting AVAILABLE right now — unclaimed, waiting on the
+     * shared board (App\Http\Controllers\Driver\AvailableOrdersController).
+     * Every eligible driver sees the exact same set from this one scope;
+     * there's no per-driver copy of "what's available" the way OrderOffer
+     * rows are per-driver.
+     *
+     * @param  Builder<Order>  $query
+     * @return Builder<Order>
+     */
+    public function scopeAvailable(Builder $query): Builder
+    {
+        return $query->where('status', OrderStatus::AVAILABLE->value);
+    }
 }

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Driver;
 
-use App\Enums\OrderOfferResult;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Driver;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -30,9 +30,11 @@ class DashboardController extends Controller
             'driver' => $driver,
             'locationStatus' => $this->locationStatus($driver),
             'currentOrder' => $driver?->currentOrder,
-            'offers' => $driver
-                ? $driver->offers()->with('order')->where('result', OrderOfferResult::PENDING->value)->latest('offered_at')->get()
-                : collect(),
+            // The shared board (App\Http\Controllers\Driver\AvailableOrdersController)
+            // embedded right on the dashboard, since this is the page a
+            // driver actually lands on. Same Order::available() read the
+            // standalone board page uses — no per-driver filtering.
+            'availableOrders' => $driver ? Order::available()->oldest('created_at')->get() : collect(),
             'recentOrders' => $driver
                 ? $driver->orders()
                     ->whereIn('status', [
