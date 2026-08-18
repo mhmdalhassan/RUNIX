@@ -15,17 +15,40 @@
                      pure duplication. --}}
                 <h2 class="runix-text-heading">{{ __('Summary') }}</h2>
 
-                <div class="runix-filter-tabs" role="tablist" aria-label="{{ __('Date range') }}">
-                    @foreach ($periods as $option)
-                        <a
-                            href="{{ route('admin.dashboard', ['period' => $option->value]) }}"
-                            role="tab"
-                            aria-selected="{{ $option === $period ? 'true' : 'false' }}"
-                            class="runix-filter-tab"
+                <div class="flex flex-wrap items-center gap-3">
+                    <div class="runix-filter-tabs" role="tablist" aria-label="{{ __('Date range') }}">
+                        @foreach ($periods as $option)
+                            <a
+                                href="{{ route('admin.dashboard', ['period' => $option->value]) }}"
+                                role="tab"
+                                aria-selected="{{ $option === $period ? 'true' : 'false' }}"
+                                class="runix-filter-tab"
+                            >
+                                {{ $option->label() }}
+                            </a>
+                        @endforeach
+                    </div>
+
+                    {{-- Pick any single calendar day, past or future —
+                         the preset tabs above only ever cover relative
+                         ranges ending "now". Submits as its own GET so
+                         the resulting URL (?period=custom&date=...) is
+                         bookmarkable/shareable, same as the preset tabs. --}}
+                    <form method="GET" action="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
+                        <input type="hidden" name="period" value="custom">
+                        <label for="dashboard-date" class="sr-only">{{ __('Pick a specific day') }}</label>
+                        <input
+                            id="dashboard-date"
+                            type="date"
+                            name="date"
+                            value="{{ $selectedDate->toDateString() }}"
+                            max="{{ today()->toDateString() }}"
+                            class="runix-input w-auto"
                         >
-                            {{ $option->label() }}
-                        </a>
-                    @endforeach
+                        <button type="submit" class="runix-btn {{ $period->isCustom() ? 'runix-btn-primary' : 'runix-btn-secondary' }} runix-btn-sm">
+                            {{ __('View Day') }}
+                        </button>
+                    </form>
                 </div>
             </div>
 

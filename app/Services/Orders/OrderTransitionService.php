@@ -20,6 +20,12 @@ use Illuminate\Support\Facades\DB;
  * insert an OrderStatusHistory row; that keeps "every transition creates
  * exactly one history record" true by construction instead of by
  * discipline.
+ *
+ * The two sanctioned exceptions are ClaimOrderForDriverService and
+ * ReleaseOrderForDriverService — each moves orders.driver_id/drivers.
+ * current_order_id together with the status change, atomically, and a
+ * generic transition() can't offer that same one-UPDATE race guarantee
+ * (see either class's own docblock).
  */
 class OrderTransitionService
 {

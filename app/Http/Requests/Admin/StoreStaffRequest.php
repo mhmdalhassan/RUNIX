@@ -34,8 +34,13 @@ class StoreStaffRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role' => ['required', Rule::in([UserRole::DISPATCHER->value, UserRole::DRIVER->value])],
+            'role' => ['required', Rule::in([
+                UserRole::DISPATCHER->value,
+                UserRole::DRIVER->value,
+                UserRole::RESTAURANT_ADMIN->value,
+            ])],
             'phone' => ['required_if:role,'.UserRole::DRIVER->value, 'nullable', 'string', 'max:255', 'unique:drivers,phone'],
+            'restaurant_id' => ['required_if:role,'.UserRole::RESTAURANT_ADMIN->value, 'nullable', 'integer', 'exists:restaurants,id'],
         ];
     }
 }

@@ -26,6 +26,15 @@ class StoreRestaurantRequest extends FormRequest
     {
         $this->merge([
             'is_active' => $this->boolean('is_active', default: true),
+            // Checkbox group: nothing checked means the key is absent
+            // from the request entirely, which must normalize to an
+            // empty array (not stay missing) so it still overwrites a
+            // previously-set list on update.
+            'closed_weekdays' => collect($this->input('closed_weekdays', []))
+                ->map(fn ($day) => (int) $day)
+                ->unique()
+                ->values()
+                ->all(),
         ]);
     }
 
@@ -44,6 +53,15 @@ class StoreRestaurantRequest extends FormRequest
             'pickup_longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_active' => ['boolean'],
             'logo' => ['nullable', 'image', 'max:2048'],
+            // Both or neither — an opening time with no closing time (or
+            // vice versa) can't express a window. Equal values are fine
+            // (Restaurant::isOpenNow() reads that as open all day), and
+            // closes_at before opens_at is fine too (an overnight window,
+            // e.g. 18:00-02:00), so there's no ordering rule here.
+            'opens_at' => ['nullable', 'date_format:H:i', 'required_with:closes_at'],
+            'closes_at' => ['nullable', 'date_format:H:i', 'required_with:opens_at'],
+            'closed_weekdays' => ['array'],
+            'closed_weekdays.*' => ['integer', 'between:0,6'],
         ];
     }
 }

@@ -24,6 +24,10 @@
         'offline' => ['tone' => 'neutral', 'label' => 'Offline'],
         'active' => ['tone' => 'success', 'label' => 'Active'],
         'inactive' => ['tone' => 'neutral', 'label' => 'Inactive'],
+        // Restaurant::isOpenNow() — whether it's inside opens_at/closes_at
+        // right now, distinct from is_active (active/inactive above).
+        'open' => ['tone' => 'success', 'label' => 'Open'],
+        'closed' => ['tone' => 'warning', 'label' => 'Closed'],
         // MenuItem::is_available — 'available' above (Order status) already
         // fits the true case; only the false case needs its own entry.
         'unavailable' => ['tone' => 'warning', 'label' => 'Unavailable'],

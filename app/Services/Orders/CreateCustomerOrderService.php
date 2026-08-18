@@ -36,18 +36,29 @@ class CreateCustomerOrderService
      * @param  array<int, array{menu_item_id: int, quantity: int}>  $cartItems  Already shaped by StoreCustomerOrderRequest.
      *
      * @throws ValidationException if any submitted item no longer belongs
-     *                              to this restaurant or is no longer
-     *                              available server-side — the cart was
-     *                              built client-side against menu state
-     *                              that may since have changed, and
-     *                              price/availability are never trusted
-     *                              from the client (same principle as
-     *                              cod_enabled forcing amounts
-     *                              server-side elsewhere in this app).
+     *                             to this restaurant or is no longer
+     *                             available server-side — the cart was
+     *                             built client-side against menu state
+     *                             that may since have changed, and
+     *                             price/availability are never trusted
+     *                             from the client (same principle as
+     *                             cod_enabled forcing amounts
+     *                             server-side elsewhere in this app) —
+     *                             or if the restaurant is outside its
+     *                             opening hours, which the client-side
+     *                             cart also can't be trusted to have
+     *                             re-checked (a cart built while open
+     *                             can still be submitted after closing).
      */
     public function create(Customer $customer, Restaurant $restaurant, array $cartItems, string $deliveryAddress, ?string $customerNotes): Order
     {
         return DB::transaction(function () use ($customer, $restaurant, $cartItems, $deliveryAddress, $customerNotes) {
+            if (! $restaurant->isOpenNow()) {
+                throw ValidationException::withMessages([
+                    'restaurant' => __('This restaurant is currently closed and not accepting orders.'),
+                ]);
+            }
+
             $lines = $this->resolveLines($restaurant, $cartItems);
 
             $merchantAmount = $lines->sum(fn (array $line) => $line['price_snapshot'] * $line['quantity']);

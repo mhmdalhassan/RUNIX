@@ -67,6 +67,11 @@ class RestaurantController extends Controller
 
         return view('admin.restaurants.show', [
             'restaurant' => $restaurant->load('menuCategories.menuItems'),
+            // Only rendered for a Dispatcher/Super Admin viewer (see the
+            // view itself) — computed unconditionally here anyway since
+            // it's cheap and statusPreviewWeekday() already defaults
+            // sanely for every role.
+            'previewWeekday' => auth()->user()->statusPreviewWeekday(),
         ]);
     }
 

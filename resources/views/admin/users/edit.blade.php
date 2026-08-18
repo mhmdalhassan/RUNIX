@@ -15,6 +15,14 @@
                     <p class="runix-hint">{{ __('Role cannot be changed after the account is created.') }}</p>
                 </div>
 
+                @if ($user->isRestaurantAdmin())
+                    <div class="runix-field">
+                        <span class="runix-label">{{ __('Restaurant') }}</span>
+                        <p class="runix-text-body">{{ $user->restaurant?->name ?? __('—') }}</p>
+                        <p class="runix-hint">{{ __('The restaurant cannot be changed after the account is created.') }}</p>
+                    </div>
+                @endif
+
                 <x-input name="name" label="{{ __('Name') }}" :value="$user->name" required autofocus />
                 <x-input name="email" type="email" label="{{ __('Email') }}" :value="$user->email" required />
 

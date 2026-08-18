@@ -23,6 +23,12 @@ enum DashboardPeriod: string
     case WEEK = 'week';
     case MONTH = 'month';
     case YEAR = 'year';
+    // A single picked-by-hand calendar day, not a relative range — see
+    // Admin\DashboardController's own docblock on why this one has no
+    // meaningful start()/needs the `date` query param instead, and
+    // DashboardPeriod::isCustom()/presets() for how the view keeps it
+    // out of the ordinary tab loop.
+    case CUSTOM = 'custom';
 
     /**
      * Parses the `period` query param, falling back to TODAY for a
@@ -35,13 +41,34 @@ enum DashboardPeriod: string
     }
 
     /**
+     * The relative-range presets shown as ordinary tab links — CUSTOM
+     * excluded, since it's rendered as a date-picker form instead (see
+     * admin/dashboard.blade.php).
+     *
+     * @return list<self>
+     */
+    public static function presets(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $period) => $period !== self::CUSTOM));
+    }
+
+    public function isCustom(): bool
+    {
+        return $this === self::CUSTOM;
+    }
+
+    /**
      * Start of the selected range. The end is always "now" (see
-     * DashboardController) — nobody filters into the future.
+     * DashboardController) — nobody filters into the future. Not
+     * meaningful for CUSTOM — DashboardController never calls this for
+     * that case, computing the picked day's own start/end from the
+     * `date` query param instead; the arm below only exists so this
+     * match stays exhaustive.
      */
     public function start(): Carbon
     {
         return match ($this) {
-            self::TODAY => today(),
+            self::TODAY, self::CUSTOM => today(),
             self::WEEK => now()->startOfWeek(),
             self::MONTH => now()->startOfMonth(),
             self::YEAR => now()->startOfYear(),
@@ -58,6 +85,7 @@ enum DashboardPeriod: string
             self::WEEK => __('This Week'),
             self::MONTH => __('This Month'),
             self::YEAR => __('This Year'),
+            self::CUSTOM => __('Custom Day'),
         };
     }
 
@@ -73,6 +101,7 @@ enum DashboardPeriod: string
             self::WEEK => __("This Week's Breakdown"),
             self::MONTH => __("This Month's Breakdown"),
             self::YEAR => __("This Year's Breakdown"),
+            self::CUSTOM => __('Breakdown for the Selected Day'),
         };
     }
 
@@ -86,6 +115,7 @@ enum DashboardPeriod: string
             self::WEEK => __('Created this week'),
             self::MONTH => __('Created this month'),
             self::YEAR => __('Created this year'),
+            self::CUSTOM => __('Created on the selected day'),
         };
     }
 
@@ -99,6 +129,7 @@ enum DashboardPeriod: string
             self::WEEK => __('Delivered this week'),
             self::MONTH => __('Delivered this month'),
             self::YEAR => __('Delivered this year'),
+            self::CUSTOM => __('Delivered on the selected day'),
         };
     }
 
@@ -114,6 +145,7 @@ enum DashboardPeriod: string
             self::WEEK => ':count delivery this week|:count deliveries this week',
             self::MONTH => ':count delivery this month|:count deliveries this month',
             self::YEAR => ':count delivery this year|:count deliveries this year',
+            self::CUSTOM => ':count delivery on this day|:count deliveries on this day',
         };
     }
 }

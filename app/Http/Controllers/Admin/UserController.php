@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\StoreStaffRequest;
 use App\Http\Requests\Admin\UpdateStaffPasswordRequest;
 use App\Http\Requests\Admin\UpdateStaffRequest;
 use App\Models\Driver;
+use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +25,7 @@ class UserController extends Controller
 
         $users = User::query()
             ->staff()
+            ->with('restaurant')
             ->when($request->string('search')->trim()->isNotEmpty(), function ($query) use ($request) {
                 $search = $request->string('search')->trim()->value();
 
@@ -50,19 +52,23 @@ class UserController extends Controller
     {
         Gate::authorize('create', User::class);
 
-        return view('admin.users.create');
+        return view('admin.users.create', [
+            'restaurants' => Restaurant::query()->orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     public function store(StoreStaffRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $role = UserRole::from($validated['role']);
 
-        DB::transaction(function () use ($validated) {
+        DB::transaction(function () use ($validated, $role) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
-                'role' => UserRole::from($validated['role']),
+                'role' => $role,
+                'restaurant_id' => $role === UserRole::RESTAURANT_ADMIN ? $validated['restaurant_id'] : null,
             ]);
 
             if ($user->role === UserRole::DRIVER) {

@@ -149,6 +149,98 @@ class RestaurantsPublicPageTest extends TestCase
             ->assertDontSee(__('Filter by category'));
     }
 
+    // --- Opening hours --------------------------------------------------
+
+    public function test_the_show_page_shows_open_when_within_opening_hours(): void
+    {
+        $restaurant = Restaurant::factory()->create([
+            'is_active' => true,
+            'opens_at' => now()->subHour()->format('H:i'),
+            'closes_at' => now()->addHour()->format('H:i'),
+        ]);
+
+        $this->get(route('restaurants.show', $restaurant))
+            ->assertOk()
+            ->assertSee(__('Open'))
+            ->assertDontSee(__('This restaurant is currently closed.'));
+    }
+
+    public function test_the_show_page_shows_closed_outside_opening_hours(): void
+    {
+        $restaurant = Restaurant::factory()->create([
+            'is_active' => true,
+            'opens_at' => now()->addHours(2)->format('H:i'),
+            'closes_at' => now()->addHours(4)->format('H:i'),
+        ]);
+
+        $this->get(route('restaurants.show', $restaurant))
+            ->assertOk()
+            ->assertSee(__('Closed'))
+            ->assertSee(__('This restaurant is currently closed.'));
+    }
+
+    public function test_a_restaurant_with_no_hours_configured_is_always_open(): void
+    {
+        $restaurant = Restaurant::factory()->create(['is_active' => true, 'opens_at' => null, 'closes_at' => null]);
+
+        $this->assertTrue($restaurant->isOpenNow());
+    }
+
+    public function test_a_restaurant_is_closed_on_its_configured_day_off_even_within_hours(): void
+    {
+        $restaurant = Restaurant::factory()->create([
+            'is_active' => true,
+            'opens_at' => now()->subHour()->format('H:i'),
+            'closes_at' => now()->addHour()->format('H:i'),
+            'closed_weekdays' => [(int) now()->dayOfWeek],
+        ]);
+
+        $this->assertFalse($restaurant->isOpenNow());
+    }
+
+    public function test_a_restaurant_is_open_on_a_day_that_is_not_its_day_off(): void
+    {
+        $restaurant = Restaurant::factory()->create([
+            'is_active' => true,
+            'opens_at' => now()->subHour()->format('H:i'),
+            'closes_at' => now()->addHour()->format('H:i'),
+            'closed_weekdays' => [(int) now()->addDay()->dayOfWeek],
+        ]);
+
+        $this->assertTrue($restaurant->isOpenNow());
+    }
+
+    public function test_the_show_page_shows_the_closed_today_message_on_a_configured_day_off(): void
+    {
+        $restaurant = Restaurant::factory()->create([
+            'is_active' => true,
+            'closed_weekdays' => [(int) now()->dayOfWeek],
+        ]);
+
+        $this->get(route('restaurants.show', $restaurant))
+            ->assertOk()
+            ->assertSee(__('Closed'))
+            ->assertSee(__('Closed today.'));
+    }
+
+    public function test_add_to_cart_is_hidden_for_an_available_item_while_the_restaurant_is_closed(): void
+    {
+        $restaurant = Restaurant::factory()->create([
+            'is_active' => true,
+            'opens_at' => now()->addHours(2)->format('H:i'),
+            'closes_at' => now()->addHours(4)->format('H:i'),
+        ]);
+        $category = MenuCategory::factory()->for($restaurant)->create();
+        MenuItem::factory()->for($category)->create(['name' => 'Dragon Roll', 'is_available' => true]);
+
+        // Matches the "Add to cart" button's own class list — checking
+        // the visible word "Add" would false-positive on unrelated text
+        // like "Address".
+        $this->get(route('restaurants.show', $restaurant))
+            ->assertOk()
+            ->assertDontSee('runix-btn-secondary runix-btn-sm', false);
+    }
+
     public function test_the_show_page_includes_a_search_box_and_a_no_results_message_for_client_side_filtering(): void
     {
         $restaurant = Restaurant::factory()->create(['is_active' => true]);

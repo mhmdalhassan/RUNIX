@@ -3,6 +3,7 @@
 namespace Tests\Feature\Admin;
 
 use App\Models\Driver;
+use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -60,6 +61,43 @@ class StaffManagementTest extends TestCase
         $driver = Driver::where('user_id', $user->id)->first();
         $this->assertNotNull($driver, 'Creating a Driver-role staff account must also create a linked Driver row.');
         $this->assertSame('+96170555555', $driver->phone);
+    }
+
+    public function test_super_admin_can_create_a_restaurant_admin_scoped_to_a_restaurant(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $restaurant = Restaurant::factory()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'Cedar Grill Admin',
+            'email' => 'cedar-admin@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'restaurant_admin',
+            'restaurant_id' => $restaurant->id,
+        ]);
+
+        $response->assertRedirect(route('admin.users.index'));
+
+        $user = User::where('email', 'cedar-admin@example.com')->firstOrFail();
+        $this->assertTrue($user->isRestaurantAdmin());
+        $this->assertSame($restaurant->id, $user->restaurant_id);
+    }
+
+    public function test_restaurant_admin_role_via_staff_form_requires_a_restaurant(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.users.store'), [
+            'name' => 'No Restaurant Admin',
+            'email' => 'norestaurant@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+            'role' => 'restaurant_admin',
+        ]);
+
+        $response->assertSessionHasErrors('restaurant_id');
+        $this->assertDatabaseMissing('users', ['email' => 'norestaurant@example.com']);
     }
 
     public function test_driver_role_via_staff_form_requires_a_phone(): void

@@ -13,6 +13,22 @@
                 <x-input name="phone" label="{{ __('Phone') }}" :value="$restaurant->phone" />
                 <x-textarea name="address" label="{{ __('Address') }}" rows="2">{{ $restaurant->address }}</x-textarea>
 
+                <div class="rounded-runix-md border border-[var(--runix-border)] p-4">
+                    <p class="runix-label mb-3 flex items-center gap-1.5">
+                        <x-icon name="clock" class="h-4 w-4" />
+                        {{ __('Opening Hours') }}
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <x-input type="time" name="opens_at" label="{{ __('Opens at') }}" :value="$restaurant->opens_at?->format('H:i')" hint="{{ __('Leave both blank to stay open all the time.') }}" />
+                        <x-input type="time" name="closes_at" label="{{ __('Closes at') }}" :value="$restaurant->closes_at?->format('H:i')" />
+                    </div>
+
+                    <div class="mt-4">
+                        <x-weekday-checkboxes :selected="$restaurant->closed_weekdays ?? []" />
+                    </div>
+                </div>
+
                 <div class="runix-field">
                     <x-input-label for="logo" value="{{ __('Logo (optional)') }}" />
                     <input type="file" id="logo" name="logo" accept="image/*" class="runix-text-input" aria-invalid="{{ $errors->has('logo') ? 'true' : 'false' }}">

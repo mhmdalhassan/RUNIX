@@ -8,6 +8,7 @@ use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\Restaurant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Tests\TestCase;
@@ -138,7 +139,7 @@ class OrderPlacementTest extends TestCase
     {
         [$restaurant, $burger] = $this->restaurantWithMenu();
 
-        $response = $this->actingAs(\App\Models\User::factory()->create())
+        $response = $this->actingAs(User::factory()->create())
             ->post(route('customer.orders.store'), [
                 'restaurant_id' => $restaurant->id,
                 'items' => [['menu_item_id' => $burger->id, 'quantity' => 1]],
@@ -183,6 +184,26 @@ class OrderPlacementTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors('items');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_an_order_cannot_be_placed_while_the_restaurant_is_closed(): void
+    {
+        [$restaurant, $burger] = $this->restaurantWithMenu();
+        $restaurant->update([
+            'opens_at' => now()->addHours(2)->format('H:i'),
+            'closes_at' => now()->addHours(4)->format('H:i'),
+        ]);
+        $customer = $this->eligibleCustomer();
+        Auth::guard('customer')->login($customer);
+
+        $response = $this->post(route('customer.orders.store'), [
+            'restaurant_id' => $restaurant->id,
+            'items' => [['menu_item_id' => $burger->id, 'quantity' => 1]],
+            'delivery_address' => '12 Test Street, Beirut',
+        ]);
+
+        $response->assertSessionHasErrors('restaurant');
         $this->assertDatabaseCount('orders', 0);
     }
 

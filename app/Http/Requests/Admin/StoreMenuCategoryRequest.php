@@ -14,7 +14,7 @@ class StoreMenuCategoryRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return Gate::allows('create', MenuCategory::class);
+        return Gate::allows('create', [MenuCategory::class, $this->route('restaurant')]);
     }
 
     /**

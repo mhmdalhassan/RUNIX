@@ -23,6 +23,7 @@
                         <option value="">{{ __('Any') }}</option>
                         <option value="dispatcher" @selected($role === 'dispatcher')>{{ __('Dispatcher') }}</option>
                         <option value="driver" @selected($role === 'driver')>{{ __('Driver') }}</option>
+                        <option value="restaurant_admin" @selected($role === 'restaurant_admin')>{{ __('Restaurant Admin') }}</option>
                     </select>
                 </div>
                 <div class="flex items-center gap-3">
@@ -54,7 +55,12 @@
                                     </div>
                                 </td>
                                 <td data-label="{{ __('Email') }}" class="runix-table-cell-secondary">{{ $user->email }}</td>
-                                <td data-label="{{ __('Role') }}" class="runix-table-cell-secondary">{{ $user->role->label() }}</td>
+                                <td data-label="{{ __('Role') }}" class="runix-table-cell-secondary">
+                                    {{ $user->role->label() }}
+                                    @if ($user->isRestaurantAdmin() && $user->restaurant)
+                                        <span class="runix-text-caption block">{{ $user->restaurant->name }}</span>
+                                    @endif
+                                </td>
                                 <td data-label="{{ __('Status') }}"><x-status-badge :status="$user->is_active ? 'active' : 'inactive'" /></td>
                                 <td data-label="{{ __('Actions') }}">
                                     <div class="runix-table-actions">
@@ -99,7 +105,7 @@
                                     <x-empty-state
                                         icon="user"
                                         title="{{ __('No staff accounts yet') }}"
-                                        description="{{ __('Add a dispatcher or driver account to start managing RunIX operations.') }}"
+                                        description="{{ __('Add a dispatcher, driver, or restaurant admin account to start managing RunIX operations.') }}"
                                     >
                                         <x-slot name="action">
                                             <x-button href="{{ route('admin.users.create') }}" variant="primary">{{ __('Add Staff Account') }}</x-button>

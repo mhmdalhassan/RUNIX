@@ -7,6 +7,21 @@
         </x-page-header>
     </x-slot>
 
+    @php
+        // Short/full weekday labels, Sunday-first — matches Restaurant::
+        // closed_weekdays' own indexing. Kept local to this view rather
+        // than composed from Restaurant::WEEKDAY_NAMES_PLURAL (private,
+        // and plural — wrong shape for a pill label or a singular
+        // "on :day" sentence).
+        $weekdayShort = [__('Sun'), __('Mon'), __('Tue'), __('Wed'), __('Thu'), __('Fri'), __('Sat')];
+        $weekdayFull = [__('Sunday'), __('Monday'), __('Tuesday'), __('Wednesday'), __('Thursday'), __('Friday'), __('Saturday')];
+        $isToday = $previewWeekday === (int) now()->dayOfWeek;
+        // Today uses the live, time-aware check; any other previewed day
+        // only has a day-off/working-day concept (see Restaurant::
+        // isClosedOnWeekday's own docblock for why).
+        $previewOpen = $isToday ? $restaurant->isOpenNow() : ! $restaurant->isClosedOnWeekday($previewWeekday);
+    @endphp
+
     <div class="space-y-6">
         <x-card>
             <div class="flex items-start gap-4">
@@ -23,11 +38,67 @@
                         <dt class="runix-text-caption">{{ __('Address') }}</dt>
                         <dd class="runix-text-body mt-1">{{ $restaurant->address ?? '—' }}</dd>
                     </div>
-                    <div>
-                        <dt class="runix-text-caption">{{ __('Status') }}</dt>
-                        <dd class="mt-1"><x-status-badge :status="$restaurant->is_active ? 'active' : 'inactive'" /></dd>
-                    </div>
                 </dl>
+            </div>
+
+            <div class="mt-6 border-t border-[var(--runix-border)] pt-5">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <x-status-badge :status="$restaurant->is_active ? 'active' : 'inactive'" />
+                        @if ($restaurant->is_active)
+                            <x-status-badge :status="$previewOpen ? 'open' : 'closed'" />
+                        @endif
+                    </div>
+
+                    <div class="runix-text-caption flex items-center gap-1.5">
+                        <x-icon name="clock" class="h-4 w-4 shrink-0" />
+                        <span>
+                            {{ $restaurant->hoursLabel() ?? __('Open all the time') }}
+                            @if ($restaurant->closedWeekdaysLabel())
+                                · {{ $restaurant->closedWeekdaysLabel() }}
+                            @endif
+                        </span>
+                    </div>
+                </div>
+
+                {{-- Not shown to a RESTAURANT_ADMIN viewing their own
+                     restaurant — they already know its schedule; this is
+                     for a Dispatcher/Super Admin checking many
+                     restaurants who wants a quick "is it closed on
+                     Fridays" answer without doing the math themselves. --}}
+                @unless (auth()->user()->isRestaurantAdmin())
+                    <div class="mt-4">
+                        <p class="runix-text-caption mb-2">{{ __('Preview status for') }}</p>
+
+                        <div class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Preview status for a specific day') }}">
+                            @foreach ($weekdayShort as $day => $label)
+                                <form method="POST" action="{{ route('admin.restaurants.status-preview.update') }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="weekday" value="{{ $day }}">
+                                    <button
+                                        type="submit"
+                                        class="runix-text-caption rounded-full border px-3 py-1.5 font-medium transition {{ $day === $previewWeekday
+                                            ? 'border-transparent bg-runix-primary text-white'
+                                            : 'border-[var(--runix-border)] text-runix-text-secondary hover:border-runix-primary hover:text-runix-text' }}"
+                                    >
+                                        {{ $label }}
+                                    </button>
+                                </form>
+                            @endforeach
+                        </div>
+
+                        <p class="runix-text-caption mt-2">
+                            @if ($isToday)
+                                {{ __('Showing live status for today.') }}
+                            @elseif ($previewOpen)
+                                {{ __('A working day: :hours.', ['hours' => $restaurant->hoursLabel() ?? __('open all day')]) }}
+                            @else
+                                {{ __('Closed all day on :day.', ['day' => $weekdayFull[$previewWeekday]]) }}
+                            @endif
+                        </p>
+                    </div>
+                @endunless
             </div>
         </x-card>
 
@@ -143,8 +214,13 @@
             </div>
         @endif
 
-        <a href="{{ route('admin.restaurants.index') }}" class="text-sm font-medium text-runix-text-secondary hover:text-runix-text">
-            {{ __('Back to list') }}
-        </a>
+        {{-- A restaurant admin has no list to go "back" to — this IS
+             their one restaurant, and admin.restaurants.index is a 403
+             for that role (RestaurantPolicy::viewAny). --}}
+        @unless (auth()->user()->isRestaurantAdmin())
+            <a href="{{ route('admin.restaurants.index') }}" class="text-sm font-medium text-runix-text-secondary hover:text-runix-text">
+                {{ __('Back to list') }}
+            </a>
+        @endunless
     </div>
 </x-app-layout>

@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\MenuCategoryController as AdminMenuCategoryContro
 use App\Http\Controllers\Admin\MenuItemController as AdminMenuItemController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\RestaurantController as AdminRestaurantController;
+use App\Http\Controllers\Admin\RestaurantStatusPreviewController as AdminRestaurantStatusPreviewController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Dispatch\DashboardController as DispatchDashboardController;
@@ -30,6 +31,10 @@ Route::get('/dashboard', function (Request $request) {
     return match (true) {
         $request->user()->isSuperAdmin() => redirect()->route('admin.dashboard'),
         $request->user()->isDispatcher() => redirect()->route('dispatch.dashboard'),
+        // No dedicated dashboard of its own — a restaurant admin only
+        // ever manages the one restaurant it's linked to, so its show
+        // page (menu + profile) IS the dashboard.
+        $request->user()->isRestaurantAdmin() => redirect()->route('admin.restaurants.show', $request->user()->restaurant_id),
         default => redirect()->route('driver.dashboard'),
     };
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -77,6 +82,30 @@ Route::middleware(['auth', 'verified', 'role:dispatcher,super_admin'])
 
         Route::resource('customers', AdminCustomerController::class);
 
+        Route::resource('orders', AdminOrderController::class)->except('destroy');
+        Route::patch('/orders/{order}/assign', [AdminOrderController::class, 'assign'])->name('orders.assign');
+        Route::patch('/orders/{order}/transition', [AdminOrderController::class, 'transition'])->name('orders.transition');
+
+        // Not restaurant-scoped: one account-wide "which weekday am I
+        // previewing" preference, reused on every restaurant show page
+        // — see RestaurantStatusPreviewController's own docblock for why
+        // it lives in this role group rather than the one below (a
+        // RESTAURANT_ADMIN never sees the picker that posts here).
+        Route::patch('/restaurants-status-preview', [AdminRestaurantStatusPreviewController::class, 'update'])->name('restaurants.status-preview.update');
+    });
+
+// Restaurant & Menu Management: same as above, but also open to
+// RESTAURANT_ADMIN — a separate group (rather than just adding the role
+// to the one above) because a restaurant admin must NOT reach
+// drivers/customers/orders, only its own restaurant's menu and profile.
+// Route-level access here is deliberately coarse (any of the three roles
+// gets past this middleware); RestaurantPolicy/MenuCategoryPolicy/
+// MenuItemPolicy do the real per-restaurant ownership check inside each
+// controller action — see their own docblocks.
+Route::middleware(['auth', 'verified', 'role:dispatcher,super_admin,restaurant_admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
         Route::resource('restaurants', AdminRestaurantController::class);
         // Shallow: create/store stay nested under restaurants/{restaurant}
         // (need to know which restaurant), edit/update/destroy flatten to
@@ -88,10 +117,6 @@ Route::middleware(['auth', 'verified', 'role:dispatcher,super_admin'])
             ->shallow()->except(['index', 'show']);
         Route::resource('restaurants.menu-items', AdminMenuItemController::class)
             ->shallow()->except(['index', 'show']);
-
-        Route::resource('orders', AdminOrderController::class)->except('destroy');
-        Route::patch('/orders/{order}/assign', [AdminOrderController::class, 'assign'])->name('orders.assign');
-        Route::patch('/orders/{order}/transition', [AdminOrderController::class, 'transition'])->name('orders.transition');
     });
 
 Route::middleware(['auth', 'verified', 'role:dispatcher,super_admin'])
@@ -124,6 +149,7 @@ Route::middleware(['auth', 'verified', 'role:driver'])
         Route::get('/orders', [DriverOrderController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [DriverOrderController::class, 'show'])->name('orders.show');
         Route::patch('/orders/{order}/transition', [DriverOrderController::class, 'transition'])->name('orders.transition');
+        Route::patch('/orders/{order}/release', [DriverOrderController::class, 'release'])->name('orders.release');
     });
 
 Route::middleware('auth')->group(function () {

@@ -49,12 +49,13 @@
                     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach ($restaurants as $restaurant)
                             <a href="{{ route('restaurants.show', $restaurant) }}" class="runix-card runix-card-hover flex flex-col overflow-hidden p-0">
-                                <div class="flex h-36 w-full shrink-0 items-center justify-center bg-[var(--runix-indigo-soft)]">
+                                <div class="relative flex h-36 w-full shrink-0 items-center justify-center bg-[var(--runix-indigo-soft)]">
                                     @if ($restaurant->logoUrl())
                                         <img src="{{ $restaurant->logoUrl() }}" alt="" class="h-full w-full object-cover">
                                     @else
                                         <x-icon name="store" class="h-10 w-10 text-[var(--runix-indigo)]" />
                                     @endif
+                                    <x-status-badge :status="$restaurant->isOpenNow() ? 'open' : 'closed'" class="absolute end-2 top-2" />
                                 </div>
                                 <div class="min-w-0 p-4">
                                     <p class="runix-text-heading truncate">{{ $restaurant->name }}</p>

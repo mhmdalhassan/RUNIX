@@ -129,6 +129,7 @@
                                     </template>
 
                                     <x-auth-session-status :status="session('status')" />
+                                    <x-input-error :messages="$errors->get('restaurant')" />
                                     <x-input-error :messages="$errors->get('items')" />
 
                                     <x-textarea name="delivery_address" label="{{ __('Delivery Address') }}" rows="2" required>{{ old('delivery_address', $customerAddress) }}</x-textarea>

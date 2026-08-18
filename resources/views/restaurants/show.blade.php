@@ -37,12 +37,43 @@
                         @endif
                     </div>
                     <div class="min-w-0">
-                        <h1 class="runix-text-display">{{ $restaurant->name }}</h1>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h1 class="runix-text-display">{{ $restaurant->name }}</h1>
+                            <x-status-badge :status="$restaurant->isOpenNow() ? 'open' : 'closed'" />
+                        </div>
                         @if ($restaurant->address)
                             <p class="runix-text-caption mt-1">{{ $restaurant->address }}</p>
                         @endif
+                        @if ($restaurant->hoursLabel() || $restaurant->closedWeekdaysLabel())
+                            <p class="runix-text-caption mt-1">
+                                @if ($restaurant->hoursLabel())
+                                    {{ __('Hours') }}: {{ $restaurant->hoursLabel() }}
+                                @endif
+                                @if ($restaurant->closedWeekdaysLabel())
+                                    · {{ $restaurant->closedWeekdaysLabel() }}
+                                @endif
+                            </p>
+                        @endif
                     </div>
                 </div>
+
+                @unless ($restaurant->isOpenNow())
+                    <div class="runix-card mt-6" style="border-color: var(--runix-warning); background-color: var(--runix-warning-soft);">
+                        <p class="runix-text-body font-medium">{{ __('This restaurant is currently closed.') }}</p>
+                        <p class="runix-text-caption mt-1">
+                            @if ($restaurant->isClosedToday())
+                                {{ __('Closed today.') }}
+                                @if ($restaurant->hoursLabel())
+                                    {{ __('Regular hours: :hours.', ['hours' => $restaurant->hoursLabel()]) }}
+                                @endif
+                            @elseif ($restaurant->hoursLabel())
+                                {{ __('It opens again at :time.', ['time' => $restaurant->opens_at->format('g:i A')]) }}
+                            @else
+                                {{ __('Please check back later.') }}
+                            @endif
+                        </p>
+                    </div>
+                @endunless
 
                 @php
                     // forelse's own @empty branch only fires when
@@ -177,7 +208,11 @@
                                                             <div class="mt-auto flex items-center justify-between gap-2 pt-3">
                                                                 <p class="runix-text-body font-semibold">${{ number_format((float) $item->price, 2) }}</p>
 
-                                                                @if ($item->is_available)
+                                                                {{-- Also gated on isOpenNow() — the restaurant being
+                                                                     closed blocks ordering entirely, same as an
+                                                                     unavailable item, even though the item itself
+                                                                     is still is_available. --}}
+                                                                @if ($item->is_available && $restaurant->isOpenNow())
                                                                     <div x-data>
                                                                         <template x-if="!$store.cart.items[{{ $item->id }}]">
                                                                             <button

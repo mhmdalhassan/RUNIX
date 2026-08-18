@@ -17,7 +17,7 @@ class MenuItemController extends Controller
 {
     public function create(Request $request, Restaurant $restaurant): View
     {
-        Gate::authorize('create', MenuItem::class);
+        Gate::authorize('create', [MenuItem::class, $restaurant]);
 
         return view('admin.menu-items.create', [
             'restaurant' => $restaurant,

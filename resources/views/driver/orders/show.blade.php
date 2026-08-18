@@ -7,6 +7,15 @@
 
 @php
     $destructive = [\App\Enums\OrderStatus::CANCELLED, \App\Enums\OrderStatus::FAILED];
+
+    // Before pickup, a driver backing out hands the order back to the
+    // shared board (App\Services\Orders\ReleaseOrderForDriverService)
+    // instead of terminally cancelling it — see that class's own
+    // docblock for why ACCEPTED is the cutoff. The ordinary CANCELLED
+    // transition below is skipped in that case in favor of the release
+    // button rendered after the loop; once PICKED_UP/ON_THE_WAY, "Cancel"
+    // reverts to the normal terminal transition, unchanged.
+    $canRelease = $order->status === \App\Enums\OrderStatus::ACCEPTED;
 @endphp
 
 <x-app-layout>
@@ -39,10 +48,14 @@
             </div>
         </x-card>
 
-        @if (count($allowedTransitions))
+        @if (count($allowedTransitions) || $canRelease)
             <x-card title="{{ __('Update Status') }}">
+                <x-input-error :messages="$errors->get('order')" />
+
                 <div class="space-y-2">
                     @foreach ($allowedTransitions as $to)
+                        @continue($canRelease && $to === \App\Enums\OrderStatus::CANCELLED)
+
                         @if (in_array($to, $destructive, true))
                             <button
                                 type="button"
@@ -76,6 +89,31 @@
                             </form>
                         @endif
                     @endforeach
+
+                    @if ($canRelease)
+                        <button
+                            type="button"
+                            class="runix-btn runix-btn-secondary w-full justify-center"
+                            x-data=""
+                            x-on:click="$dispatch('open-modal', 'driver-release-order')"
+                        >
+                            {{ __('Cancel & Return to Available') }}
+                        </button>
+
+                        <x-confirm-modal
+                            name="driver-release-order"
+                            title="{{ __('Return this order to the available board?') }}"
+                            description="{{ __('Any other driver will be able to claim it right away. This cannot be undone.') }}"
+                        >
+                            <x-slot name="footer">
+                                <form method="POST" action="{{ route('driver.orders.release', $order) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <x-button type="submit" variant="danger">{{ __('Cancel & Return to Available') }}</x-button>
+                                </form>
+                            </x-slot>
+                        </x-confirm-modal>
+                    @endif
                 </div>
             </x-card>
         @endif

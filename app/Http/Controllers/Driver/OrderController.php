@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Driver;
 
 use App\Enums\OrderStatus;
 use App\Exceptions\InvalidOrderTransitionException;
+use App\Exceptions\OrderNotReleasableException;
 use App\Http\Controllers\Controller;
 use App\Services\Orders\OrderTransitionService;
+use App\Services\Orders\ReleaseOrderForDriverService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -83,5 +85,35 @@ class OrderController extends Controller
         }
 
         return redirect()->route('driver.orders.show', $order)->with('status', 'Order status updated.');
+    }
+
+    /**
+     * A driver backing out of an order before pickup — returns it to
+     * AVAILABLE (immediately visible on the shared board, see
+     * ReleaseOrderForDriverService) instead of the terminal CANCELLED a
+     * dispatcher-initiated cancel uses. Only legal while the order is
+     * still ACCEPTED; once PICKED_UP the ordinary transition() action
+     * above (to CANCELLED/FAILED) is what the "cancel" button in the UI
+     * uses instead — see driver.orders.show's own comment on that split.
+     */
+    public function release(Request $request, int $order, ReleaseOrderForDriverService $service): RedirectResponse
+    {
+        $driver = $request->user()->driver;
+
+        abort_if($driver === null, 404);
+
+        $orderModel = $driver->orders()->findOrFail($order);
+
+        $validated = $request->validate([
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $service->release($orderModel, $driver, $request->user(), $validated['note'] ?? null);
+        } catch (OrderNotReleasableException $e) {
+            return back()->withErrors(['order' => $e->getMessage()]);
+        }
+
+        return redirect()->route('driver.orders.available')->with('status', 'Order returned to the available board.');
     }
 }

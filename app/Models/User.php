@@ -9,11 +9,12 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'role', 'is_active'])]
+#[Fillable(['name', 'email', 'password', 'role', 'is_active', 'restaurant_id', 'status_preview_weekday'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -32,7 +33,19 @@ class User extends Authenticatable
             'password' => 'hashed',
             'role' => UserRole::class,
             'is_active' => 'boolean',
+            'status_preview_weekday' => 'integer',
         ];
+    }
+
+    /**
+     * Which weekday (0-6, Sunday-first) this account currently wants to
+     * preview a restaurant's open/closed status for on the admin
+     * restaurant page — falls back to today when nothing's been chosen
+     * yet. See Admin\RestaurantStatusPreviewController for where it's set.
+     */
+    public function statusPreviewWeekday(): int
+    {
+        return $this->status_preview_weekday ?? (int) now()->dayOfWeek;
     }
 
     /**
@@ -43,6 +56,18 @@ class User extends Authenticatable
     public function driver(): HasOne
     {
         return $this->hasOne(Driver::class);
+    }
+
+    /**
+     * The restaurant this account manages — only ever set for a
+     * RESTAURANT_ADMIN (see RestaurantPolicy/MenuCategoryPolicy/
+     * MenuItemPolicy for how it gates access); null for every other role.
+     *
+     * @return BelongsTo<Restaurant, $this>
+     */
+    public function restaurant(): BelongsTo
+    {
+        return $this->belongsTo(Restaurant::class);
     }
 
     public function isSuperAdmin(): bool
@@ -60,6 +85,11 @@ class User extends Authenticatable
         return $this->role === UserRole::DRIVER;
     }
 
+    public function isRestaurantAdmin(): bool
+    {
+        return $this->role === UserRole::RESTAURANT_ADMIN;
+    }
+
     /**
      * Scope to accounts manageable through the Staff Management UI.
      *
@@ -73,6 +103,6 @@ class User extends Authenticatable
      */
     public function scopeStaff(Builder $query): Builder
     {
-        return $query->whereIn('role', [UserRole::DISPATCHER, UserRole::DRIVER]);
+        return $query->whereIn('role', [UserRole::DISPATCHER, UserRole::DRIVER, UserRole::RESTAURANT_ADMIN]);
     }
 }

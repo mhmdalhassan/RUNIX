@@ -307,13 +307,70 @@ class DashboardReportingTest extends TestCase
 
     // --- Filter tabs render for every period --------------------------------
 
-    public function test_dashboard_renders_a_tab_for_every_period(): void
+    public function test_dashboard_renders_a_tab_for_every_preset_period(): void
     {
         $response = $this->actingAs($this->admin())->get('/admin/dashboard');
 
         $response->assertOk();
-        foreach (DashboardPeriod::cases() as $option) {
+        // CUSTOM isn't a preset tab — it's the date-picker form covered
+        // by the "Custom day" tests below.
+        foreach (DashboardPeriod::presets() as $option) {
             $response->assertSee($option->label());
         }
+    }
+
+    // --- Custom day (?period=custom&date=) ----------------------------------
+
+    public function test_a_custom_day_scopes_every_figure_to_just_that_calendar_day(): void
+    {
+        $target = today()->subDays(5);
+
+        Order::factory()->delivered()->create(['delivery_fee' => 20, 'delivered_at' => $target->copy()->addHours(10)]);
+        Order::factory()->create(['created_at' => $target->copy()->addHour()]);
+        Expense::factory()->create(['date' => $target, 'amount' => 5]);
+
+        // Noise outside the picked day, on both sides.
+        Order::factory()->delivered()->create(['delivery_fee' => 999, 'delivered_at' => $target->copy()->subDay()]);
+        Order::factory()->delivered()->create(['delivery_fee' => 999, 'delivered_at' => $target->copy()->addDay()]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=custom&date='.$target->toDateString());
+
+        $response->assertOk();
+        $response->assertViewHas('period', DashboardPeriod::CUSTOM);
+        $response->assertViewHas('totalOrdersToday', 1);
+        $response->assertViewHas('revenueToday', 20.0);
+        $response->assertViewHas('expensesToday', 5.0);
+    }
+
+    public function test_a_custom_day_does_not_include_anything_up_to_the_present_moment(): void
+    {
+        // The relative presets end at "now" — a past custom day must NOT
+        // inherit that and silently include everything since, only its
+        // own 24 hours.
+        $target = today()->subDays(3);
+        Order::factory()->delivered()->create(['delivery_fee' => 999, 'delivered_at' => now()->subDay()]);
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=custom&date='.$target->toDateString());
+
+        $response->assertViewHas('revenueToday', 0.0);
+    }
+
+    public function test_a_malformed_custom_date_falls_back_to_today_instead_of_erroring(): void
+    {
+        Order::factory()->count(2)->create();
+
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard?period=custom&date=not-a-date');
+
+        $response->assertOk();
+        $response->assertViewHas('selectedDate', fn ($date) => $date->isToday());
+        $response->assertViewHas('totalOrdersToday', 2);
+    }
+
+    public function test_the_date_picker_defaults_to_today_when_no_custom_day_is_selected(): void
+    {
+        $response = $this->actingAs($this->admin())->get('/admin/dashboard');
+
+        $response->assertOk();
+        $response->assertViewHas('selectedDate', fn ($date) => $date->isToday());
     }
 }

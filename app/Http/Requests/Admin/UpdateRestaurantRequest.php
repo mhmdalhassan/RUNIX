@@ -25,6 +25,12 @@ class UpdateRestaurantRequest extends FormRequest
         $this->merge([
             'is_active' => $this->boolean('is_active'),
             'remove_logo' => $this->boolean('remove_logo'),
+            // See StoreRestaurantRequest's own comment on this normalization.
+            'closed_weekdays' => collect($this->input('closed_weekdays', []))
+                ->map(fn ($day) => (int) $day)
+                ->unique()
+                ->values()
+                ->all(),
         ]);
     }
 
@@ -44,6 +50,11 @@ class UpdateRestaurantRequest extends FormRequest
             'is_active' => ['boolean'],
             'logo' => ['nullable', 'image', 'max:2048'],
             'remove_logo' => ['boolean'],
+            // See StoreRestaurantRequest's own comment on this pair.
+            'opens_at' => ['nullable', 'date_format:H:i', 'required_with:closes_at'],
+            'closes_at' => ['nullable', 'date_format:H:i', 'required_with:opens_at'],
+            'closed_weekdays' => ['array'],
+            'closed_weekdays.*' => ['integer', 'between:0,6'],
         ];
     }
 }

@@ -130,6 +130,82 @@ class RestaurantManagementTest extends TestCase
         Storage::disk('public')->assertMissing('restaurants/old.jpg');
     }
 
+    // --- Opening hours ---------------------------------------------------
+
+    public function test_opening_hours_can_be_set_on_create(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($admin)->post(route('admin.restaurants.store'), $this->validPayload([
+            'opens_at' => '09:00',
+            'closes_at' => '22:00',
+        ]))->assertRedirect();
+
+        $restaurant = Restaurant::where('name', 'Cedar Grill')->firstOrFail();
+        $this->assertSame('09:00', $restaurant->opens_at->format('H:i'));
+        $this->assertSame('22:00', $restaurant->closes_at->format('H:i'));
+    }
+
+    public function test_opens_at_without_closes_at_is_rejected(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.restaurants.store'), $this->validPayload([
+            'opens_at' => '09:00',
+        ]));
+
+        $response->assertSessionHasErrors('closes_at');
+        $this->assertDatabaseCount('restaurants', 0);
+    }
+
+    public function test_closed_weekdays_can_be_set_on_create(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($admin)->post(route('admin.restaurants.store'), $this->validPayload([
+            'closed_weekdays' => [1, 1, '3'],
+        ]))->assertRedirect();
+
+        $restaurant = Restaurant::where('name', 'Cedar Grill')->firstOrFail();
+        $this->assertSame([1, 3], $restaurant->closed_weekdays);
+    }
+
+    public function test_closed_weekdays_can_be_cleared_on_update(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+        $restaurant = Restaurant::factory()->create(['closed_weekdays' => [0]]);
+
+        $this->actingAs($admin)->put(route('admin.restaurants.update', $restaurant), $this->validPayload())
+            ->assertRedirect();
+
+        $this->assertSame([], $restaurant->fresh()->closed_weekdays);
+    }
+
+    public function test_an_out_of_range_weekday_is_rejected(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.restaurants.store'), $this->validPayload([
+            'closed_weekdays' => [7],
+        ]));
+
+        $response->assertSessionHasErrors('closed_weekdays.0');
+        $this->assertDatabaseCount('restaurants', 0);
+    }
+
+    public function test_an_invalid_time_format_is_rejected(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $response = $this->actingAs($admin)->post(route('admin.restaurants.store'), $this->validPayload([
+            'opens_at' => 'not-a-time',
+            'closes_at' => '22:00',
+        ]));
+
+        $response->assertSessionHasErrors('opens_at');
+        $this->assertDatabaseCount('restaurants', 0);
+    }
+
     public function test_restaurant_logo_upload_rejects_a_non_image_file(): void
     {
         Storage::fake('public');

@@ -45,4 +45,15 @@
             {{ __('My Orders') }}
         </x-nav-item>
     @endif
+
+    @if (Auth::user()->isRestaurantAdmin())
+        <x-nav-item
+            variant="bottom"
+            :href="route('admin.restaurants.show', Auth::user()->restaurant_id)"
+            :active="request()->routeIs('admin.restaurants.*', 'admin.menu-categories.*', 'admin.menu-items.*')"
+            icon="store"
+        >
+            {{ __('Restaurant') }}
+        </x-nav-item>
+    @endif
 </nav>

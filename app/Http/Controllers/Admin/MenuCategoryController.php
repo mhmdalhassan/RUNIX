@@ -16,7 +16,7 @@ class MenuCategoryController extends Controller
 {
     public function create(Restaurant $restaurant): View
     {
-        Gate::authorize('create', MenuCategory::class);
+        Gate::authorize('create', [MenuCategory::class, $restaurant]);
 
         return view('admin.menu-categories.create', [
             'restaurant' => $restaurant,

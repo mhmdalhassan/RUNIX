@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\UserRole;
+use App\Models\Restaurant;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -71,6 +72,18 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => UserRole::DRIVER,
+        ]);
+    }
+
+    /**
+     * @param  int|null  $restaurantId  Defaults to a freshly-factoried
+     *                                  Restaurant when omitted.
+     */
+    public function restaurantAdmin(?int $restaurantId = null): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => UserRole::RESTAURANT_ADMIN,
+            'restaurant_id' => $restaurantId ?? Restaurant::factory(),
         ]);
     }
 }

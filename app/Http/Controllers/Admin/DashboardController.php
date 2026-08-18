@@ -31,8 +31,19 @@ class DashboardController extends Controller
         // which is why the view keys stay *Today-suffixed regardless of
         // which period is actually selected.
         $period = DashboardPeriod::fromRequest($request->query('period'));
-        $start = $period->start();
-        $end = Carbon::now();
+        $selectedDate = $this->parseSelectedDate($request->query('date'));
+
+        // CUSTOM picks one whole calendar day, start to end — unlike the
+        // relative presets, its end is NOT "now" (a past day's own
+        // end-of-day, or the range would silently balloon to include
+        // everything up to the present moment for any past date picked).
+        if ($period->isCustom()) {
+            $start = $selectedDate->copy()->startOfDay();
+            $end = $selectedDate->copy()->endOfDay();
+        } else {
+            $start = $period->start();
+            $end = Carbon::now();
+        }
 
         // Delivered-in-range is the one cohort shared by Revenue/Driver
         // Earnings/Net Profit/Driver Overview below — built once so the
@@ -48,7 +59,10 @@ class DashboardController extends Controller
         return view('admin.dashboard', [
             'user' => $request->user(),
             'period' => $period,
-            'periods' => DashboardPeriod::cases(),
+            'periods' => DashboardPeriod::presets(),
+            // Always populated (even outside CUSTOM) so the date-picker
+            // input has a sane value to open on the first time it's used.
+            'selectedDate' => $selectedDate,
             'stats' => [
                 'active_drivers' => Driver::where('is_active', true)->count(),
                 'online_drivers' => Driver::where('is_online', true)->count(),
@@ -73,6 +87,27 @@ class DashboardController extends Controller
                 ->get(),
             'driverActivityToday' => $this->driverActivityInRange($start, $end),
         ]);
+    }
+
+    /**
+     * Parses the `date` query param (CUSTOM's day picker) into a Carbon
+     * date, falling back to today for a missing/malformed value — same
+     * "never 500 the dashboard over a bad filter" spirit as
+     * DashboardPeriod::fromRequest(). A future date is allowed through
+     * unchanged (it just renders an empty day, same as any date with no
+     * activity yet — not worth a special case).
+     */
+    private function parseSelectedDate(?string $value): Carbon
+    {
+        if ($value === null || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return today();
+        }
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $value)->startOfDay();
+        } catch (\InvalidArgumentException) {
+            return today();
+        }
     }
 
     /**
