@@ -105,6 +105,105 @@ class OrderPlacementTest extends TestCase
         $this->assertTrue(Order::available()->whereKey($order->id)->exists());
     }
 
+    public function test_a_successful_checkout_flags_the_tracking_page_to_clear_the_cart(): void
+    {
+        [$restaurant, $burger] = $this->restaurantWithMenu();
+        $customer = $this->eligibleCustomer();
+        Auth::guard('customer')->login($customer);
+
+        $response = $this->post(route('customer.orders.store'), [
+            'restaurant_id' => $restaurant->id,
+            'items' => [['menu_item_id' => $burger->id, 'quantity' => 1]],
+            'delivery_address' => '12 Test Street, Beirut',
+        ]);
+
+        $order = Order::firstOrFail();
+        $response->assertRedirect(route('track.show', $order->tracking_token));
+        $response->assertSessionHas('order_just_placed_restaurant_id', $restaurant->id);
+
+        // Following the redirect (session flash still live) must actually
+        // render the clear-cart trigger, scoped to this order's own
+        // restaurant, not just set the flag.
+        $this->get(route('track.show', $order->tracking_token))
+            ->assertOk()
+            ->assertSee("cart.restaurantId === {$restaurant->id}", false);
+    }
+
+    public function test_the_clear_trigger_only_clears_a_cart_still_matching_the_orders_own_restaurant(): void
+    {
+        // Regression guard for the multi-tab race described in
+        // Customer\OrderController::store()'s own comment: a delayed
+        // clear() must never fire against a cart that's since moved on to
+        // a different restaurant (built in another tab while this one's
+        // redirect was still loading). The comparison itself is client-side
+        // (Alpine's cart.restaurantId), but this proves the server renders
+        // THIS order's restaurant id, not a bare unconditional clear().
+        [$restaurantA, $burgerA] = $this->restaurantWithMenu();
+        $customer = $this->eligibleCustomer();
+        Auth::guard('customer')->login($customer);
+
+        $this->post(route('customer.orders.store'), [
+            'restaurant_id' => $restaurantA->id,
+            'items' => [['menu_item_id' => $burgerA->id, 'quantity' => 1]],
+            'delivery_address' => '12 Test Street, Beirut',
+        ]);
+
+        $order = Order::firstOrFail();
+
+        $response = $this->get(route('track.show', $order->tracking_token));
+
+        $response->assertOk();
+        $response->assertDontSee('window.Alpine?.store(\'cart\')?.clear()', false); // no unconditional clear
+        $response->assertSee("cart && cart.restaurantId === {$restaurantA->id}", false);
+    }
+
+    public function test_a_second_visit_to_the_tracking_page_never_clears_the_cart_again(): void
+    {
+        [$restaurant, $burger] = $this->restaurantWithMenu();
+        $customer = $this->eligibleCustomer();
+        Auth::guard('customer')->login($customer);
+
+        $this->post(route('customer.orders.store'), [
+            'restaurant_id' => $restaurant->id,
+            'items' => [['menu_item_id' => $burger->id, 'quantity' => 1]],
+            'delivery_address' => '12 Test Street, Beirut',
+        ]);
+
+        $order = Order::firstOrFail();
+
+        // The immediate follow of the redirect (the browser's real next
+        // request) still legitimately carries the one-shot flash — that's
+        // the load it's meant for. It's the load AFTER that one where the
+        // flash has actually aged out, proving a bookmark/refresh/shared
+        // link never re-clears the cart on every visit.
+        $this->get(route('track.show', $order->tracking_token))->assertOk();
+
+        $this->get(route('track.show', $order->tracking_token))
+            ->assertOk()
+            ->assertDontSee('cart.restaurantId ===', false);
+    }
+
+    public function test_a_validation_failure_never_flags_the_cart_to_clear(): void
+    {
+        [$restaurant, $burger] = $this->restaurantWithMenu();
+        [, $otherItem] = $this->restaurantWithMenu();
+        $customer = $this->eligibleCustomer();
+        Auth::guard('customer')->login($customer);
+
+        $response = $this->post(route('customer.orders.store'), [
+            'restaurant_id' => $restaurant->id,
+            'items' => [
+                ['menu_item_id' => $burger->id, 'quantity' => 1],
+                ['menu_item_id' => $otherItem->id, 'quantity' => 1], // belongs to a different restaurant
+            ],
+            'delivery_address' => '12 Test Street, Beirut',
+        ]);
+
+        $response->assertSessionHasErrors('items.1.menu_item_id'); // this is the failure path, not success
+        $this->assertDatabaseCount('orders', 0);
+        $response->assertSessionMissing('order_just_placed_restaurant_id');
+    }
+
     public function test_placing_an_order_with_an_incomplete_profile_redirects_to_complete_it(): void
     {
         [$restaurant, $burger] = $this->restaurantWithMenu();

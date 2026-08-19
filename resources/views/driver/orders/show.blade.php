@@ -1,8 +1,12 @@
 {{--
-    No financial fields here on purpose (spec §19) — delivery_fee/
-    driver_earning stay admin/dispatcher-only for now; a driver financial
-    dashboard is a later phase. The offer card (before acceptance) is the
-    one place a driver sees the fee, to help them decide.
+    delivery_fee itself stays admin/dispatcher-only here — what the
+    customer paid isn't the driver's business, only what they themselves
+    earn is. driver_earning is shown below (own order only, via
+    $request->user()->driver->orders() scoping — never another driver's).
+    A full driver financial dashboard (earnings across many orders,
+    paid-vs-owed) is still a later phase; this is just "what does this
+    one job pay," the same number already shown pre-acceptance on the
+    offer/claim card.
 --}}
 
 @php
@@ -28,6 +32,11 @@
             <div class="flex items-center justify-between gap-4">
                 <p class="runix-text-caption">{{ __('Status') }}</p>
                 <x-status-badge :status="$order->status" />
+            </div>
+
+            <div class="mt-4 flex items-center justify-between rounded-runix-md bg-runix-surface-secondary px-3 py-2.5">
+                <span class="runix-text-body font-medium">{{ __('Your Earning') }}</span>
+                <span class="runix-text-heading font-semibold text-[var(--runix-success)]">${{ number_format((float) $order->driver_earning, 2) }}</span>
             </div>
 
             <div class="mt-4 space-y-3">
@@ -106,7 +115,7 @@
                             description="{{ __('Any other driver will be able to claim it right away. This cannot be undone.') }}"
                         >
                             <x-slot name="footer">
-                                <form method="POST" action="{{ route('driver.orders.release', $order) }}">
+                                <form x-data="preventDoubleSubmit" @submit="onSubmit" method="POST" action="{{ route('driver.orders.release', $order) }}">
                                     @csrf
                                     @method('PATCH')
                                     <x-button type="submit" variant="danger">{{ __('Cancel & Return to Available') }}</x-button>

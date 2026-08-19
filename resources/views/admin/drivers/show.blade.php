@@ -52,6 +52,37 @@
             <x-driver-delivery-history :history="$deliveryHistory" />
         </x-card>
 
+        <x-card title="{{ __('Feedback') }}">
+            <div class="flex items-center gap-3">
+                @if ($averageRating !== null)
+                    <x-star-rating :rating="$averageRating" />
+                    <span class="runix-text-body font-medium">{{ number_format($averageRating, 1) }}</span>
+                @endif
+                <span class="runix-text-caption">
+                    {{ $feedbackCount > 0 ? trans_choice(':count review|:count reviews', $feedbackCount, ['count' => $feedbackCount]) : __('No ratings yet') }}
+                </span>
+            </div>
+
+            @if ($recentFeedback->isNotEmpty())
+                <ul class="mt-4 divide-y divide-[var(--runix-border)]">
+                    @foreach ($recentFeedback as $feedback)
+                        <li class="py-3 first:pt-0 last:pb-0">
+                            <div class="flex items-center justify-between gap-3">
+                                <x-star-rating :rating="$feedback->rating" />
+                                <a href="{{ route('admin.orders.show', $feedback->order_id) }}" class="runix-text-caption font-medium text-runix-primary hover:text-[var(--runix-primary-hover)]">
+                                    {{ __('View order') }}
+                                </a>
+                            </div>
+                            @if ($feedback->comment)
+                                <p class="runix-text-body mt-1">{{ $feedback->comment }}</p>
+                            @endif
+                            <p class="runix-text-caption mt-0.5">{{ $feedback->created_at->diffForHumans() }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-card>
+
         <div class="flex items-center gap-4">
             @if ($driver->is_active)
                 <button

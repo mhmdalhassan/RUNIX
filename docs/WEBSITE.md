@@ -26,14 +26,24 @@ Customers are a fully separate identity system from staff — see `App\Models\Cu
 
 ## Placing an order
 
-`Customer\OrderController::store` → `App\Services\Orders\CreateCustomerOrderService`. Unlike a dispatcher-created order, there's no staff member in the loop to set `delivery_fee`/`driver_earning` manually, so both default from `config('runix.customer_ordering')`. The item total is always collected as cash on delivery (`merchant_amount + delivery_fee = cod_amount`), independent of whether the staff-side `cod_enabled` flag is on. On success the customer is redirected straight to the public tracking page — there is currently no "my orders" list.
+`Customer\OrderController::store` → `App\Services\Orders\CreateCustomerOrderService`. Unlike a dispatcher-created order, there's no staff member in the loop to set `delivery_fee`/`driver_earning` manually, so both default from `config('runix.customer_ordering')`. The item total is always collected as cash on delivery (`merchant_amount + delivery_fee = cod_amount`), independent of whether the staff-side `cod_enabled` flag is on. On success the customer is redirected straight to the public tracking page — there is currently no "my orders" list. That redirect also carries a one-shot `order_just_placed` session flash; the tracking page's own render checks for it and clears the client-side cart (`Alpine.store('cart').clear()`) exactly once, so a customer who navigates back to a restaurant afterward doesn't still see the order they just placed sitting in their cart. The flash never survives a second page load, so a bookmarked/shared tracking link never clears anyone's cart.
 
 ## Tracking an order (live)
 
-- **`GET /track/{order:tracking_token}`** (`OrderTrackingController`) — public, no login. Resolved by the order's own unguessable `tracking_token` via route-model binding. Loads the order and its status history only — never driver or customer PII.
+- **`GET /track/{order:tracking_token}`** (`OrderTrackingController`) — public, no login. Resolved by the order's own unguessable `tracking_token` via route-model binding. Loads the order, its status history, and (deliberately, as of the feedback feature below) the assigned driver's **name only** — never their phone, email, or location, and never the customer's own identity either.
 - **`GET /track/{order:tracking_token}/location`** (`OrderLocationController`) — the actual source of truth the live map polls, scoped to orders currently `ACCEPTED`, `PICKED_UP`, or `ON_THE_WAY`. Returns lat/lng only.
 - **`resources/js/runix/order-tracking-map.js`** — renders the position with Leaflet + OpenStreetMap tiles, polling every 8 seconds. It derives its own polling URL from `window.location.pathname` rather than being handed the token a second time, and shows a locale-aware "updated Xs ago" label via `Intl.RelativeTimeFormat`.
 - **Public broadcast channel `order.{orderId}.location`** (event `DriverLocationUpdated`) — no auth needed, carries lat/lng only. It's a "refresh sooner" hint, not the source of truth — the map still polls the endpoint above regardless of whether this event ever arrives — same "events are hints, not truth" pattern used throughout the app (see [DASHBOARD.md](DASHBOARD.md#real-time-staff-side) for the staff-side channels). Fired from `UpdateDriverLocationService` whenever a driver who currently has this order updates their GPS.
+
+### Driver name & feedback
+
+Once an order has a driver assigned (`ACCEPTED` onward, any status including after delivery), the tracking page shows that driver's **name** — `App\Http\Controllers\OrderTrackingController` eager-loads `driver.user` with an explicit column restriction (`id, name` only), so the driver's phone/email/location never even reach memory for this page, let alone render.
+
+Once the order reaches `DELIVERED`, the order's own logged-in customer (checked via `auth('customer')->id() === $order->customer_id` — matching what `App\Http\Requests\Customer\StoreOrderFeedbackRequest::authorize()` enforces server-side, not just a client-side hide) sees either:
+- a one-time rating form (`POST /track/{order:tracking_token}/feedback`, the one `/track/*` route that isn't guest-accessible — `auth:customer` middleware, plus the order-ownership check above), or
+- their already-submitted rating/comment, if they've already left one.
+
+`App\Services\Customers\SubmitDriverFeedbackService` is the only place a `DriverFeedback` row is created — one per order (DB-enforced unique constraint), only once `DELIVERED`, only for that order's own customer; all three checks are re-verified inside the service's own transaction, not just trusted from the Form Request. Nobody else — a different customer, a guest, another driver — ever sees the form or the submitted rating on this page; see [DASHBOARD.md](DASHBOARD.md) for where the feedback itself surfaces to staff.
 
 ## Localization
 

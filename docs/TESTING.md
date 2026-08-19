@@ -52,3 +52,7 @@ Reports land in `playwright-report/`.
 php artisan test --filter=OrderTransitionServiceTest
 npx playwright test order-tracking.spec.ts
 ```
+
+## Known environment quirk: JSON 422 responses in `phpunit`
+
+`laravel/pao` (an "agent-optimized output" dev dependency that reformats PHPUnit's results) has a bug summarizing a test where the HTTP response under test is a JSON `422` validation-error response (`postJson()`/`patchJson()` hitting a `FormRequest` failure) — it errors with `Call to a member function all() on array` while building its own summary, even when the underlying assertion would have passed. Reproduces on pre-existing, untouched endpoints too (e.g. `Driver\LocationController::update` given an out-of-range latitude), so it's a tooling issue, not an application bug — confirmed by re-running the same request with `withoutExceptionHandling()`, which shows Laravel correctly throwing/rendering the expected `ValidationException`. If a test needs to prove a JSON endpoint's validation still rejects bad input, prefer asserting through the non-JSON path instead (validation rules run identically regardless of `Accept` header) rather than asserting `422`/`assertJsonValidationErrors` directly on a `postJson()`/`patchJson()` call.

@@ -11,16 +11,19 @@ use Illuminate\Queue\SerializesModels;
 /**
  * Broadcast publicly on `orders.taken` the moment an order is claimed —
  * lets every driver's offer list / shared board drop it instantly without
- * waiting for their next poll. Payload deliberately stays minimal
- * otherwise: no customer PII, not even the pickup/delivery address, ever
- * goes on a public channel.
+ * waiting for their next poll. Payload deliberately stays minimal: no
+ * customer PII, not even the pickup/delivery address, ever goes on a
+ * public channel.
  *
- * $driverName is the one deliberate exception, added for the shared
- * board (App\Http\Controllers\Driver\AvailableOrdersController): the
- * board shows "Taken by <name>" for a moment before the card is removed,
- * so every other driver sees who won it rather than the card just
- * silently vanishing. Nullable/optional so any future caller that
- * doesn't have (or want to disclose) a name can still fire this event.
+ * Used to also carry the claiming driver's name (for a "Taken by <name>"
+ * moment on the shared board before the card was removed) — dropped: a
+ * driver's real name is PII too, and it doesn't belong on a channel
+ * anyone can subscribe to without authenticating. The board now shows a
+ * generic "this order was taken" message instead (see
+ * resources/js/runix/driver-available-orders.js); an authorized viewer
+ * who genuinely needs to know which driver has an order already gets
+ * that from the private `order.{orderId}` channel/the order's own
+ * authenticated page, never from here.
  */
 class OrderTaken implements ShouldBroadcast
 {
@@ -28,7 +31,6 @@ class OrderTaken implements ShouldBroadcast
 
     public function __construct(
         public readonly int $orderId,
-        public readonly ?string $driverName = null,
     ) {}
 
     /**
@@ -51,7 +53,6 @@ class OrderTaken implements ShouldBroadcast
     {
         return [
             'order_id' => $this->orderId,
-            'driver_name' => $this->driverName,
         ];
     }
 }

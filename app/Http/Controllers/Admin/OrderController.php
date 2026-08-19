@@ -69,8 +69,18 @@ class OrderController extends Controller
     {
         Gate::authorize('create', Order::class);
 
+        // No longer the full active-customer list (didn't scale, no way
+        // to jump to a phone number) — the view searches
+        // Admin\CustomerController::search() instead. Only look up the
+        // previously-chosen customer, and only to survive a validation
+        // failure on some other field of this same form without losing
+        // that choice.
+        $selectedCustomerId = old('customer_id');
+
         return view('admin.orders.create', [
-            'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(),
+            'selectedCustomer' => $selectedCustomerId
+                ? Customer::query()->find($selectedCustomerId, ['id', 'name', 'phone'])
+                : null,
             'drivers' => Driver::query()->with('user')->where('is_active', true)->where('is_online', true)->whereNull('current_order_id')->get(),
         ]);
     }

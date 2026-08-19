@@ -96,7 +96,7 @@ class AvailableOrdersTest extends TestCase
         $this->assertSame($order->id, $driver->current_order_id);
     }
 
-    public function test_claiming_broadcasts_order_taken_with_the_claiming_drivers_name(): void
+    public function test_claiming_broadcasts_order_taken_with_only_the_order_id(): void
     {
         Event::fake([OrderTaken::class]);
 
@@ -105,10 +105,22 @@ class AvailableOrdersTest extends TestCase
 
         $this->actingAs($driver->user)->post(route('driver.orders.available.claim', $order));
 
-        Event::assertDispatched(
-            OrderTaken::class,
-            fn ($event) => $event->orderId === $order->id && $event->driverName === $driver->user->name,
-        );
+        Event::assertDispatched(OrderTaken::class, fn ($event) => $event->orderId === $order->id);
+    }
+
+    public function test_order_taken_public_broadcast_payload_never_contains_the_driver_name(): void
+    {
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
+        $order = Order::factory()->available()->create();
+
+        // The event itself, not a fake — proves what actually goes out on
+        // the public `orders.taken` channel, not just what was passed in.
+        $event = new OrderTaken($order->id);
+        $payload = $event->broadcastWith();
+
+        $this->assertSame(['order_id' => $order->id], $payload);
+        $this->assertArrayNotHasKey('driver_name', $payload);
+        $this->assertStringNotContainsString($driver->user->name, json_encode($payload));
     }
 
     public function test_a_second_driver_cannot_claim_an_order_already_claimed(): void

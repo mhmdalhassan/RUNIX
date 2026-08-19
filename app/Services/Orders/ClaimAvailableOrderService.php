@@ -77,7 +77,7 @@ class ClaimAvailableOrderService
                 ->where('result', OrderOfferResult::PENDING->value)
                 ->update(['result' => OrderOfferResult::CANCELLED->value, 'responded_at' => now()]);
 
-            OrderTaken::dispatch($claimed->id, $driver->user->name);
+            OrderTaken::dispatch($claimed->id);
             OrderStatusUpdated::dispatch($claimed);
             DispatchActivityUpdated::dispatch(
                 sprintf('%s accepted by %s', $claimed->order_number, $driver->user->name),

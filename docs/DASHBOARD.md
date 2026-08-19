@@ -47,20 +47,20 @@ Two layers:
 | `UserController` | Staff (Dispatcher/Driver) account CRUD, Super Admin only; excludes super admins from its own listing |
 | `SettingController` | Single key/value settings form (e.g. WhatsApp contact number) |
 | `ExpenseController` | Create + list only — append-only, no edit/destroy routes exist |
-| `DriverController` / `CustomerController` | Driver and customer management |
+| `DriverController` / `CustomerController` | Driver and customer management; `CustomerController::search()` (`GET /admin/customers/search`, dispatcher/super_admin only) backs the order-create page's name/phone autocomplete — id/name/phone/address only, capped results, never email/notes/password. A driver's admin profile page (`DriverController::show`) also shows their average rating and recent customer feedback — see below |
 | `OrderController` | Order index/create/store/show/assign/transition |
 | `RestaurantController`, `MenuCategoryController`, `MenuItemController` | Restaurant + menu management, ownership-checked by Policy for `restaurant_admin` |
 | `RestaurantStatusPreviewController` | Per-account "which weekday am I previewing" preference for the hours display, reused on every restaurant page |
 
 ## Dispatch dashboard (`app/Http/Controllers/Dispatch/DashboardController`)
 
-The live operations board: available-orders count, active-deliveries count, "orders needing attention" (`AVAILABLE` for more than 5 minutes), and a recent-activity feed built from `OrderStatusHistory`. Kept live by the private `admin.dispatch` broadcast channel (event `DispatchActivityUpdated`).
+The live operations board: available-orders count, active-deliveries count, "orders needing attention" (`AVAILABLE` for more than 5 minutes), and a recent-activity feed built from `OrderStatusHistory`. Genuinely live: `?partial=1` returns just this content as a fragment (same authorization as the full page), and `resources/js/runix/dispatch-dashboard.js` re-fetches it — debounced, so a burst of events collapses into one request — on its own 20s poll and whenever `orders.available`, `orders.taken`, or the private `admin.dispatch` (`DispatchActivityUpdated`) broadcasts fire. As everywhere else, the events are just the "go refresh" trigger; the fragment itself is what's authoritative.
 
 ## Driver panel (`app/Http/Controllers/Driver`)
 
 | Controller | Responsibility |
 |---|---|
-| `DashboardController` | Today's delivered count/earnings, current order, embedded available-orders board, recent terminal orders, paginated delivery history |
+| `DashboardController` | Today's delivered count/earnings, current order, embedded available-orders board, recent terminal orders, paginated delivery history, own average rating + recent customer feedback (`App\Models\Driver::averageRating()`/`feedback()`) |
 | `AvailabilityController` | Toggle `is_online` |
 | `LocationController` | JSON GPS ping — the only pure-JSON mutation endpoint in the app; also the trigger for `DriverLocationUpdated` broadcasts (see [WEBSITE.md](WEBSITE.md)) |
 | `AvailableOrdersController` | The shared "claim any order" board — every driver's primary way to find work now |
@@ -74,6 +74,8 @@ Full state-machine detail lives in [ORDER_LIFECYCLE.md](ORDER_LIFECYCLE.md) (sha
 - **Creation**: `Admin\OrderController` → `CreateOrderService`, with staff manually setting `delivery_fee`/`driver_earning` (customer self-service orders default these instead — see WEBSITE.md).
 - **Manual assignment**: `Admin\OrderController::assign` → `AssignDriverService` — a dispatcher assigning a driver by hand, treated as "accept on the driver's behalf" (a `PENDING` order is auto-advanced to `AVAILABLE` first).
 - **Money/audit rules**: `driver_earning` exceeding `delivery_fee` requires `driver_earning_override` + a reason, and only a Super Admin may set that override. Editable order fields lock once status passes `PENDING`/`AVAILABLE` — see `UpdateOrderRequest::isLocked()`.
+- **What the driver actually sees**: `delivery_fee` and `driver_earning` are deliberately allowed to differ (see `config('runix.customer_ordering')`'s own defaults). The driver-facing offer card, the shared claim board, the driver's own order view, and their dashboard's current-delivery card all show `driver_earning` clearly labeled "Your Earning" — never just `delivery_fee`, which would overstate what the driver is actually paid. `delivery_fee` still appears as context on the two pre-acceptance cards (helps the accept/reject decision); it's dropped entirely from the post-acceptance order view, since what the customer paid isn't the driver's business once they're already committed to the job.
+- **Customer feedback**: a driver sees their own average rating and recent comments on their own dashboard only; dispatchers/super admins see the same on that driver's admin profile page. Never shown to other drivers, customers, or the public — see [WEBSITE.md](WEBSITE.md#driver-name--feedback) for where a customer actually leaves it.
 
 ## Reporting / dashboards
 
@@ -86,7 +88,7 @@ Full state-machine detail lives in [ORDER_LIFECYCLE.md](ORDER_LIFECYCLE.md) (sha
 | Channel | Visibility | Event | Access |
 |---|---|---|---|
 | `orders.available` | Public | `OrderAvailable` | none needed — consumed by the driver's available-orders board and the dispatch dashboard |
-| `orders.taken` | Public | `OrderTaken` | none needed — removes a claimed order from other drivers' boards without polling |
+| `orders.taken` | Public | `OrderTaken` | none needed — removes a claimed order from other drivers' boards and the dispatch dashboard without polling. Payload is `order_id` only — it used to also carry the claiming driver's name, dropped since a public, unauthenticated channel is the wrong place for even that much PII; the board shows a generic "this order was taken" message instead |
 | `order.{orderId}` | Private | `OrderStatusUpdated` | Super Admin/Dispatcher, or the order's assigned driver |
 | `driver.{driverId}` | Private | — | Super Admin, or that driver |
 | `admin.dispatch` | Private | `DispatchActivityUpdated` | Super Admin/Dispatcher — powers the dispatch dashboard's activity feed |

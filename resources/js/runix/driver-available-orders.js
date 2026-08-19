@@ -29,20 +29,23 @@
     }
 
     /**
-     * Shows "Taken by <name>" on the matching card for a moment, then
-     * refreshes (which drops the card for good, same as every other
+     * Shows a brief "this order was taken" message on the matching card,
+     * then refreshes (which drops the card for good, same as every other
      * still-visible-elsewhere-but-now-gone case). Falls straight through
-     * to an immediate refresh if the card isn't on this page or no name
-     * was given — e.g. it was never one of this driver's cards to begin
-     * with, or the event fired without one (OrderTaken.driverName is
-     * nullable).
+     * to an immediate refresh if the card isn't on this page — it was
+     * never one of this driver's cards to begin with.
+     *
+     * OrderTaken's public payload deliberately carries no driver name
+     * (or any other PII) — it's broadcast on `orders.taken`, which
+     * anyone can subscribe to without authenticating — so this can only
+     * ever show a generic message, never "Taken by <name>".
      */
     function handleTaken(data) {
         const card = data.order_id
             ? container.querySelector(`[data-order-id="${data.order_id}"]`)
             : null;
 
-        if (!card || !data.driver_name) {
+        if (!card) {
             refresh();
 
             return;
@@ -50,12 +53,6 @@
 
         const body = card.querySelector('[data-order-card-body]');
         const overlay = card.querySelector('[data-taken-overlay]');
-        const message = card.querySelector('[data-taken-message]');
-        const template = card.dataset.takenTemplate || 'Taken by :name';
-
-        if (message) {
-            message.textContent = template.replace(':name', data.driver_name);
-        }
 
         body?.classList.add('hidden');
         overlay?.classList.remove('hidden');

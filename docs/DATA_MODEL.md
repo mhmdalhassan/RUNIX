@@ -20,7 +20,7 @@
 
 `status` is **not** fillable — every write goes through `OrderTransitionService` (see [ORDER_LIFECYCLE.md](ORDER_LIFECYCLE.md)).
 
-Relations: `customer()`, `restaurant()` (nullable — only set for customer self-service orders), `driver()`, `earningSetBy()`, `statusHistories()` (HasMany, latest-first), `offers()`, `items()`. Scopes: `active()`, `available()`.
+Relations: `customer()`, `restaurant()` (nullable — only set for customer self-service orders), `driver()`, `earningSetBy()`, `statusHistories()` (HasMany, latest-first), `offers()`, `items()`, `feedback()` (HasOne — at most one, see below). Scopes: `active()`, `available()`.
 
 Indexes worth knowing about: composite `(status, created_at)` and `(driver_id, status)` on `orders`.
 
@@ -31,6 +31,8 @@ Indexes worth knowing about: composite `(status, created_at)` and `(driver_id, s
 **`OrderStatusHistory`** — append-only by construction: `update()`/`delete()` throw `LogicException`, and `UPDATED_AT` is disabled (`const UPDATED_AT = null`). One row per status transition, oldest state changes never mutate.
 
 **`order_number_sequences`** — not an Eloquent model; accessed via `DB::table()` directly, with `date_key` as its key and `next_number` incremented under `lockForUpdate()`. Backs the human-readable `RUN-YYYYMMDD-0001` order numbers.
+
+**`DriverFeedback`** — a customer's rating (1–5, required) and optional comment on the driver who delivered their order. `order_id` is `unique()` — at most one per order, DB-enforced (`App\Services\Customers\SubmitDriverFeedbackService` re-checks it too, defense in depth). `driver_id` is denormalized from `orders.driver_id` at submission time rather than derived through a join every read — safe because a DELIVERED order's `driver_id` is already locked and never changes again. Write-once like `OrderStatusHistory`: `update()`/`delete()` throw `LogicException`. Only ever created via that one service, itself only reachable by the order's own logged-in customer once the order is `DELIVERED` (see [WEBSITE.md](WEBSITE.md)).
 
 ## Operational
 

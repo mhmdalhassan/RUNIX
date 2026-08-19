@@ -187,11 +187,39 @@ class OrderTrackingTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Ultra Secret Customer Name');
         $response->assertDontSee('+96170999999');
-        $response->assertDontSee('Ultra Secret Driver Name');
+        // The driver's NAME is the one deliberate exception (shown once a
+        // driver is assigned — see the feature's own test below); their
+        // phone number is still never exposed, alongside everything else
+        // here.
+        $response->assertSee('Ultra Secret Driver Name');
         $response->assertDontSee('+96171888888');
         $response->assertDontSee('Ultra secret internal dispatcher note');
         $response->assertDontSee('543.21');
         $response->assertDontSee('321.09');
+    }
+
+    public function test_the_drivers_name_is_shown_once_assigned_but_not_before(): void
+    {
+        $driverUser = User::factory()->driver()->create(['name' => 'Visible Driver Name']);
+        $driver = Driver::factory()->create(['user_id' => $driverUser->id]);
+
+        $unassigned = Order::factory()->available()->create();
+        $this->get(route('track.show', $unassigned->tracking_token))
+            ->assertDontSee('Visible Driver Name');
+
+        $assigned = Order::factory()->accepted()->create(['driver_id' => $driver->id]);
+        $this->get(route('track.show', $assigned->tracking_token))
+            ->assertSee('Visible Driver Name');
+    }
+
+    public function test_the_drivers_email_is_never_exposed(): void
+    {
+        $driverUser = User::factory()->driver()->create(['email' => 'ultra-secret-driver@example.com']);
+        $driver = Driver::factory()->create(['user_id' => $driverUser->id]);
+        $order = Order::factory()->accepted()->create(['driver_id' => $driver->id]);
+
+        $this->get(route('track.show', $order->tracking_token))
+            ->assertDontSee('ultra-secret-driver@example.com');
     }
 
     public function test_driver_gps_coordinates_are_never_exposed(): void

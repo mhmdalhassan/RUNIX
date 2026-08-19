@@ -80,6 +80,10 @@ Route::middleware(['auth', 'verified', 'role:dispatcher,super_admin'])
         Route::patch('/drivers/{driver}/activate', [AdminDriverController::class, 'activate'])->name('drivers.activate');
         Route::patch('/drivers/{driver}/deactivate', [AdminDriverController::class, 'deactivate'])->name('drivers.deactivate');
 
+        // Must precede the resource route below — otherwise
+        // GET /admin/customers/search would be swallowed by customers.show's
+        // GET /admin/customers/{customer}.
+        Route::get('/customers/search', [AdminCustomerController::class, 'search'])->name('customers.search');
         Route::resource('customers', AdminCustomerController::class);
 
         Route::resource('orders', AdminOrderController::class)->except('destroy');

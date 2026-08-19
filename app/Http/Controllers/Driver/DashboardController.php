@@ -51,6 +51,9 @@ class DashboardController extends Controller
             'deliveryHistory' => $driver
                 ? $driver->deliveryHistoryQuery()->paginate(15)
                 : new LengthAwarePaginator([], 0, 15),
+            'averageRating' => $driver?->averageRating(),
+            'feedbackCount' => $driver?->feedback()->count() ?? 0,
+            'recentFeedback' => $driver ? $driver->feedback()->limit(5)->get() : collect(),
         ]);
     }
 

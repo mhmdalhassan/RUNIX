@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\OrderFeedbackController;
 use App\Http\Controllers\OrderLocationController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\RestaurantController;
@@ -29,6 +30,14 @@ Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
 Route::get('/track/{order:tracking_token}', OrderTrackingController::class)->name('track.show');
 Route::get('/track/{order:tracking_token}/location', [OrderLocationController::class, 'show'])->name('track.location');
+
+// The one /track/* route that isn't guest-accessible — leaving feedback
+// requires being logged in as the order's own customer (see
+// StoreOrderFeedbackRequest::authorize() for the ownership check
+// auth:customer alone can't express). The GET page above stays public.
+Route::post('/track/{order:tracking_token}/feedback', [OrderFeedbackController::class, 'store'])
+    ->middleware('auth:customer')
+    ->name('track.feedback.store');
 
 Route::get('/restaurants', [RestaurantController::class, 'index'])->name('restaurants.index');
 Route::get('/restaurants/{restaurant}', [RestaurantController::class, 'show'])->name('restaurants.show');

@@ -99,6 +99,9 @@ class DriverController extends Controller
         return view('admin.drivers.show', [
             'driver' => $driver->load('user'),
             'deliveryHistory' => $driver->deliveryHistoryQuery()->paginate(15),
+            'averageRating' => $driver->averageRating(),
+            'feedbackCount' => $driver->feedback()->count(),
+            'recentFeedback' => $driver->feedback()->limit(10)->get(),
         ]);
     }
 

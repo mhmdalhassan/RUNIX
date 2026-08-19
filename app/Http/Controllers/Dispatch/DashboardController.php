@@ -13,11 +13,19 @@ use Illuminate\Support\Facades\Gate;
 
 class DashboardController extends Controller
 {
+    /**
+     * `?partial=1` returns just the board fragment (no layout) — used by
+     * resources/js/runix/dispatch-dashboard.js's poll/realtime-triggered
+     * refresh, same pattern Driver\AvailableOrdersController and
+     * Driver\OrderOfferController already established. Authorization runs
+     * identically either way: this is a full re-fetch of the same
+     * dispatcher-only data, not a separate, looser endpoint.
+     */
     public function __invoke(Request $request): View
     {
         Gate::authorize('viewAny', Driver::class);
 
-        return view('dispatch.dashboard', [
+        $data = [
             'user' => $request->user(),
             'drivers' => Driver::with('user')->latest()->get(),
             // Real now that Orders exists — see the view's own comment
@@ -39,6 +47,12 @@ class DashboardController extends Controller
                 ->latest('created_at')
                 ->limit(10)
                 ->get(),
-        ]);
+        ];
+
+        if ($request->boolean('partial')) {
+            return view('dispatch.partials.board', $data);
+        }
+
+        return view('dispatch.dashboard', $data);
     }
 }

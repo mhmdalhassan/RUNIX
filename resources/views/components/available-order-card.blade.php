@@ -4,22 +4,22 @@
     that card's countdown/Reject: there's no per-driver expiry here, and
     "reject" isn't a meaningful action on a board anyone else can still
     claim. `data-order-id` is how driver-available-orders.js finds this
-    card again to show "Taken by <name>" (from the `orders.taken`
-    broadcast) before removing it.
+    card again to show it was taken (from the `orders.taken` broadcast)
+    before removing it.
 --}}
 
 @props(['order', 'canClaim'])
 
-{{--
-    data-taken-template carries the current locale's "Taken by :name"
-    phrase with the :name token left intact — driver-available-orders.js
-    substitutes the real name into it client-side when the `orders.taken`
-    broadcast names a driver, rather than the JS hard-coding English.
---}}
-<div class="runix-card" data-order-id="{{ $order->id }}" data-taken-template="{{ __('Taken by :name') }}">
+<div class="runix-card" data-order-id="{{ $order->id }}">
+    {{--
+        Generic message on purpose: OrderTaken's public payload never
+        carries a driver name (the `orders.taken` channel is public — see
+        that event's own docblock), so this can't say "Taken by <name>",
+        only that it's gone.
+    --}}
     <div data-taken-overlay class="hidden items-center justify-center gap-2 py-10 text-center">
         <x-icon name="check-circle" class="h-5 w-5 text-runix-success" />
-        <p class="runix-text-body font-medium text-runix-text" data-taken-message></p>
+        <p class="runix-text-body font-medium text-runix-text">{{ __('This order was just taken.') }}</p>
     </div>
 
     <div data-order-card-body>
@@ -59,13 +59,25 @@
             @endif
         </dl>
 
-        <div class="mt-4 flex items-center justify-between rounded-runix-md bg-runix-surface-secondary px-3 py-2.5">
-            <span class="runix-text-caption">{{ __('Delivery Fee') }}</span>
-            <span class="runix-text-data font-semibold text-runix-text">${{ number_format((float) $order->delivery_fee, 2) }}</span>
+        {{--
+            Same "earning is the number that matters, fee is just
+            context" treatment as order-offer-card.blade.php — this
+            board's card is the other place a driver decides whether to
+            accept before doing so.
+        --}}
+        <div class="mt-4 space-y-1.5 rounded-runix-md bg-runix-surface-secondary px-3 py-2.5">
+            <div class="flex items-center justify-between">
+                <span class="runix-text-caption">{{ __('Delivery Fee') }}</span>
+                <span class="runix-text-caption font-medium text-runix-text-secondary">${{ number_format((float) $order->delivery_fee, 2) }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="runix-text-body font-medium">{{ __('Your Earning') }}</span>
+                <span class="runix-text-heading font-semibold text-[var(--runix-success)]">${{ number_format((float) $order->driver_earning, 2) }}</span>
+            </div>
         </div>
 
         <div class="mt-4">
-            <form method="POST" action="{{ route('driver.orders.available.claim', $order) }}">
+            <form x-data="preventDoubleSubmit" @submit="onSubmit" method="POST" action="{{ route('driver.orders.available.claim', $order) }}">
                 @csrf
                 <x-button type="submit" variant="primary" class="w-full justify-center" :disabled="! $canClaim">
                     {{ __('Accept') }}

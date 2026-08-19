@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Status is never written directly by a controller/form — every change
@@ -130,6 +131,17 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * At most one — see App\Services\Customers\SubmitDriverFeedbackService
+     * and the unique constraint on driver_feedback.order_id.
+     *
+     * @return HasOne<DriverFeedback, $this>
+     */
+    public function feedback(): HasOne
+    {
+        return $this->hasOne(DriverFeedback::class);
     }
 
     /**

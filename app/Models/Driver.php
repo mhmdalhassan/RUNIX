@@ -60,6 +60,29 @@ class Driver extends Model
     }
 
     /**
+     * Every rating this driver has ever received, most recent first — see
+     * App\Models\DriverFeedback.
+     *
+     * @return HasMany<DriverFeedback, $this>
+     */
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(DriverFeedback::class)->latest('created_at');
+    }
+
+    /**
+     * Null (not 0) when there's no feedback yet — a driver with zero
+     * ratings is "no rating," not "a 0-star rating," and callers should
+     * treat those differently rather than rendering a misleading ★0.0.
+     */
+    public function averageRating(): ?float
+    {
+        $average = $this->feedback()->avg('rating');
+
+        return $average !== null ? round((float) $average, 1) : null;
+    }
+
+    /**
      * The one order this driver is currently occupied with, if any.
      *
      * Phase 4 note: Phase 3 deliberately had no busy concept ("a driver

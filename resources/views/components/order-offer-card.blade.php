@@ -53,18 +53,31 @@
         @endif
     </dl>
 
-    <div class="mt-4 flex items-center justify-between rounded-runix-md bg-runix-surface-secondary px-3 py-2.5">
-        <span class="runix-text-caption">{{ __('Delivery Fee') }}</span>
-        <span class="runix-text-data font-semibold text-runix-text">${{ number_format((float) $order->delivery_fee, 2) }}</span>
+    {{--
+        delivery_fee is context (what the order is worth overall);
+        driver_earning — what this driver actually nets — is the number
+        that should be unmistakable before they decide to accept, so it
+        gets the larger, success-colored treatment rather than looking
+        like a second instance of the same kind of figure.
+    --}}
+    <div class="mt-4 space-y-1.5 rounded-runix-md bg-runix-surface-secondary px-3 py-2.5">
+        <div class="flex items-center justify-between">
+            <span class="runix-text-caption">{{ __('Delivery Fee') }}</span>
+            <span class="runix-text-caption font-medium text-runix-text-secondary">${{ number_format((float) $order->delivery_fee, 2) }}</span>
+        </div>
+        <div class="flex items-center justify-between">
+            <span class="runix-text-body font-medium">{{ __('Your Earning') }}</span>
+            <span class="runix-text-heading font-semibold text-[var(--runix-success)]">${{ number_format((float) $order->driver_earning, 2) }}</span>
+        </div>
     </div>
 
     <div class="mt-4 grid grid-cols-2 gap-3">
-        <form method="POST" action="{{ route('driver.offers.reject', $offer) }}">
+        <form x-data="preventDoubleSubmit" @submit="onSubmit" method="POST" action="{{ route('driver.offers.reject', $offer) }}">
             @csrf
             @method('PATCH')
             <x-button type="submit" variant="secondary" class="w-full justify-center">{{ __('Reject') }}</x-button>
         </form>
-        <form method="POST" action="{{ route('driver.offers.accept', $offer) }}">
+        <form x-data="preventDoubleSubmit" @submit="onSubmit" method="POST" action="{{ route('driver.offers.accept', $offer) }}">
             @csrf
             @method('PATCH')
             <x-button type="submit" variant="primary" class="w-full justify-center">{{ __('Accept') }}</x-button>

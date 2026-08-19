@@ -117,7 +117,7 @@
 
                         @auth('customer')
                             @if ($profileComplete)
-                                <form method="POST" action="{{ route('customer.orders.store') }}" class="space-y-4">
+                                <form x-data="preventDoubleSubmit" @submit="onSubmit" method="POST" action="{{ route('customer.orders.store') }}" class="space-y-4">
                                     @csrf
 
                                     <input type="hidden" name="restaurant_id" :value="$store.cart.restaurantId">

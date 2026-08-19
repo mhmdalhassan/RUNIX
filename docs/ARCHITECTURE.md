@@ -75,3 +75,7 @@ Several columns intentionally duplicate data at the moment of order placement ra
 ## Frontend
 
 No SPA framework — server-rendered Blade views, progressively enhanced with Alpine.js, styled with Tailwind, bundled by Vite. Project-specific JS modules live under `resources/js/runix/` (e.g. `cart.js` for the client-side-only shopping cart, `order-tracking-map.js` for the live Leaflet map). Real-time features use `laravel-echo` + `pusher-js` (`resources/js/echo.js`), talking to Reverb.
+
+Live-refreshing panels (the dispatch board, the driver boards) all follow one shape: a `?partial=1` query flag returns just the dynamic fragment (same authorization as the full page), and a small JS module swaps it into a container — on its own poll interval always, and sooner on a realtime hint where one exists. The event is never trusted as the state itself, only as a signal to re-fetch.
+
+Duplicate-submission protection (`resources/js/runix/prevent-double-submit.js`) is a reusable Alpine component (`Alpine.data('preventDoubleSubmit', ...)`), opted into per-form with `x-data="preventDoubleSubmit" @submit="onSubmit"` — it disables a form's own submit controls the instant it's submitted, UX only. It's applied to the app's important once-only actions (driver accept/reject/claim/release, admin order creation, customer checkout), never globally — a form not given the directive is untouched. The backend's own atomic/concurrency guarantees remain the real protection against a duplicate action actually landing twice.

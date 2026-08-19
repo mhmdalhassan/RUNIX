@@ -18,6 +18,12 @@
             <div class="runix-stat-grid">
                 <x-stat-card icon="package" label="{{ __("Today's Deliveries") }}" :value="$todaysDeliveryCount" />
                 <x-stat-card icon="dollar-sign" label="{{ __("Today's Earnings") }}" value="${{ number_format((float) $todaysEarnings, 2) }}" />
+                <x-stat-card
+                    icon="star"
+                    label="{{ __('Your Rating') }}"
+                    :value="$averageRating !== null ? number_format($averageRating, 1) : __('—')"
+                    :caption="$feedbackCount > 0 ? trans_choice(':count review|:count reviews', $feedbackCount, ['count' => $feedbackCount]) : __('No ratings yet')"
+                />
             </div>
 
             <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -35,6 +41,10 @@
                                     <p class="runix-text-caption mt-0.5">{{ $currentOrder->delivery_address }}</p>
                                 </div>
                                 <x-status-badge :status="$currentOrder->status" />
+                            </div>
+                            <div class="mt-3 flex items-center justify-between">
+                                <span class="runix-text-caption">{{ __('Your Earning') }}</span>
+                                <span class="runix-text-body font-semibold text-[var(--runix-success)]">${{ number_format((float) $currentOrder->driver_earning, 2) }}</span>
                             </div>
                             <div class="mt-4">
                                 <x-button href="{{ route('driver.orders.show', $currentOrder) }}" variant="primary" class="w-full justify-center">
@@ -101,6 +111,28 @@
                                             <p class="runix-text-caption mt-0.5">{{ $order->delivery_address }}</p>
                                         </div>
                                         <x-status-badge :status="$order->status" />
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </x-card>
+
+                    <x-card title="{{ __('Recent Feedback') }}">
+                        @if ($recentFeedback->isEmpty())
+                            <x-empty-state
+                                icon="star"
+                                title="{{ __('No feedback yet') }}"
+                                description="{{ __('Customer ratings will appear here after delivery.') }}"
+                            />
+                        @else
+                            <ul class="divide-y divide-[var(--runix-border)]">
+                                @foreach ($recentFeedback as $feedback)
+                                    <li class="py-3 first:pt-0 last:pb-0">
+                                        <x-star-rating :rating="$feedback->rating" />
+                                        @if ($feedback->comment)
+                                            <p class="runix-text-body mt-1">{{ $feedback->comment }}</p>
+                                        @endif
+                                        <p class="runix-text-caption mt-0.5">{{ $feedback->created_at->diffForHumans() }}</p>
                                     </li>
                                 @endforeach
                             </ul>
