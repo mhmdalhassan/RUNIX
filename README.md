@@ -1,58 +1,78 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# RunIX
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+RunIX is a food-delivery and courier-dispatch platform built on Laravel. It combines three things in one codebase:
 
-## About Laravel
+1. **A public restaurant marketplace** — customers browse restaurants and menus and place their own orders, no account required to browse.
+2. **A dispatcher-run delivery desk** — staff take phone/manual orders, assign drivers, and track deliveries from a live operations dashboard.
+3. **Real-time driver dispatch** — an offer/claim system pushes available orders to eligible drivers, tracks their live location, and streams status changes over WebSockets to dispatchers and customers alike.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Two independent account systems back this: a **staff** side (Super Admin, Dispatcher, Driver, Restaurant Admin — see [docs/DASHBOARD.md](docs/DASHBOARD.md)) and a fully separate **customer** side (see [docs/WEBSITE.md](docs/WEBSITE.md)) — sharing one login page but isolated guards, tables, and password-reset flows underneath.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+For anything beyond this overview, see the **[docs/](docs)** folder — split by which half of the app a topic belongs to:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+**The two sides of the app**
 
-## Learning Laravel
+| Doc | Covers |
+|---|---|
+| [docs/WEBSITE.md](docs/WEBSITE.md) | The public site: restaurant browsing, cart, customer accounts, self-service ordering, live order tracking |
+| [docs/DASHBOARD.md](docs/DASHBOARD.md) | The staff panel: roles & authorization, admin/dispatch/driver controllers, reporting, staff-side real-time |
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Shared foundations** (underlie both sides)
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Doc | Covers |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Directory layout, architectural patterns, config flags |
+| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | Models, migrations, key columns and relationships |
+| [docs/ORDER_LIFECYCLE.md](docs/ORDER_LIFECYCLE.md) | Order states, dispatch/offer flow, concurrency guarantees |
+| [docs/TESTING.md](docs/TESTING.md) | PHPUnit + Playwright suites, how to run them |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Tech stack
 
-## Agentic Development
+- **Backend**: PHP 8.3, Laravel 13, Laravel Reverb (WebSockets), Laravel Breeze (auth scaffolding)
+- **Frontend**: Blade + Alpine.js + Tailwind CSS, Vite — no Livewire/Inertia/Vue/React
+- **Real-time**: Laravel Echo + Pusher-js on the client, Reverb (or Pusher/Ably) on the server
+- **Maps**: Leaflet + OpenStreetMap tiles for live driver tracking
+- **Database**: MySQL (a dedicated `runix_e2e` database is used for the Playwright suite)
+- **Testing**: PHPUnit (feature/unit) + Playwright (end-to-end, incl. visual regression)
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Getting started
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm install
+npm run build
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Or, in one step: `composer run setup`.
 
-## Contributing
+### Running the app locally
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+composer run dev
+```
 
-## Code of Conduct
+This runs, concurrently: the PHP dev server, a queue worker, `php artisan pail` (log tailing), and the Vite dev server. For real-time features (order offers, live tracking, dispatch activity feed) you'll also need Reverb running:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan reverb:start
+```
 
-## Security Vulnerabilities
+### Running tests
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+composer run test          # PHPUnit (feature + unit)
+npx playwright test        # End-to-end (see docs/TESTING.md for DB setup)
+```
 
-## License
+## Key configuration
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Project-specific settings live in `config/runix.php` (backed by env vars):
+
+- `RUNIX_COD_ENABLED` — cash-on-delivery workflow toggle (schema exists, off by default; see [docs/ORDER_LIFECYCLE.md](docs/ORDER_LIFECYCLE.md))
+- `RUNIX_CUSTOMER_DEFAULT_DELIVERY_FEE` / `RUNIX_CUSTOMER_DEFAULT_DRIVER_EARNING` — flat fee defaults for self-service customer orders (no dispatcher in the loop to set these manually)
+- `RUNIX_MAX_MATCH_RADIUS_KM`, `RUNIX_LOCATION_STALE_AFTER_MINUTES`, `RUNIX_MAX_LOCATION_ACCURACY_METERS` — driver-matching tunables (soft ranking only, never exclusion)
+
+Supported locales are `en` and `ar` (`ar` renders right-to-left) — see `config('runix.locales')`.
