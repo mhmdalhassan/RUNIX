@@ -1,6 +1,27 @@
 FROM php:8.3-fpm-alpine
 
-RUN apk add --no-cache nginx mysql-client redis composer npm nodejs git curl
+# Install system dependencies and PHP extensions
+RUN apk add --no-cache \
+    nginx \
+    mysql-client \
+    redis \
+    composer \
+    npm \
+    nodejs \
+    git \
+    curl \
+    autoconf \
+    build-base && \
+    docker-php-ext-install \
+        pdo \
+        pdo_mysql \
+        session \
+        fileinfo \
+        tokenizer \
+        dom \
+        mbstring \
+        curl \
+        zip
 
 WORKDIR /var/www
 
