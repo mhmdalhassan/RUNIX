@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RunIX</string>
+    <string name="title_activity_main">RunIX</string>
+    <string name="package_name">com.runix.delivery</string>
+    <string name="custom_url_scheme">com.runix.delivery</string>
+</resources>

@@ -1,0 +1,14 @@
+{
+  "appId": "com.runix.delivery",
+  "appName": "RunIX",
+  "webDir": "public",
+  "server": {
+    "url": "http://localhost:8000",
+    "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}
