@@ -1,16 +1,27 @@
 FROM php:8.3-cli
 
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP zip extension
+RUN docker-php-ext-install zip
+
 WORKDIR /var/www
 
 COPY . .
 
-RUN apt-get update && apt-get install -y curl git && \
-    curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
-    composer install --no-dev --optimize-autoloader
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install && npm run build
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
+
+# Install Node dependencies
+RUN apt-get update && apt-get install -y nodejs npm && rm -rf /var/lib/apt/lists/*
+RUN npm install && npm run build
 
 RUN mkdir -p storage/logs && chmod -R 775 storage bootstrap/cache
 
