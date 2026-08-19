@@ -9,8 +9,10 @@ use Illuminate\Support\Facades\Broadcast;
 | Broadcast Channels
 |--------------------------------------------------------------------------
 |
-| `orders.taken` (public — {order_id} only, no PII) needs no entry here;
-| public channels aren't authorized. Every closure below explicitly checks
+| `orders.taken`, `orders.available`, and `order.{orderId}.location` are
+| all public (no PII beyond an order id, or lat/lng for the location one)
+| and need no entry here; public channels aren't authorized. Every closure
+| below explicitly checks
 | isSuperAdmin() itself — Gate::before's Super Admin bypass (see
 | AppServiceProvider) only applies to Gate::allows()/authorize() calls, not
 | these broadcasting-auth closures.

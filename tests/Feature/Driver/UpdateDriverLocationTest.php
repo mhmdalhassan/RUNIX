@@ -3,9 +3,12 @@
 namespace Tests\Feature\Driver;
 
 use App\Enums\UserRole;
+use App\Events\DriverLocationUpdated;
 use App\Models\Driver;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 /**
@@ -155,6 +158,53 @@ class UpdateDriverLocationTest extends TestCase
         $response = $this->patch(route('driver.location.update'), $this->payload());
 
         $response->assertRedirect(route('login'));
+    }
+
+    // --- Live tracking broadcast (App\Events\DriverLocationUpdated) -----
+
+    public function test_updating_location_while_occupied_broadcasts_it_for_the_current_order(): void
+    {
+        Event::fake([DriverLocationUpdated::class]);
+        $driver = Driver::factory()->create(['is_online' => true]);
+        $order = Order::factory()->accepted()->create(['driver_id' => $driver->id]);
+        $driver->update(['current_order_id' => $order->id]);
+
+        $this->actingAs($driver->user)
+            ->patchJson(route('driver.location.update'), $this->payload())
+            ->assertOk();
+
+        Event::assertDispatched(DriverLocationUpdated::class, function (DriverLocationUpdated $event) use ($order) {
+            return $event->orderId === $order->id
+                && $event->latitude === 33.8938
+                && $event->longitude === 35.5018;
+        });
+    }
+
+    public function test_updating_location_while_unoccupied_does_not_broadcast(): void
+    {
+        Event::fake([DriverLocationUpdated::class]);
+        $driver = Driver::factory()->create(['is_online' => true, 'current_order_id' => null]);
+
+        $this->actingAs($driver->user)
+            ->patchJson(route('driver.location.update'), $this->payload())
+            ->assertOk();
+
+        Event::assertNotDispatched(DriverLocationUpdated::class);
+    }
+
+    public function test_a_location_fix_dropped_for_bad_accuracy_does_not_broadcast_either(): void
+    {
+        Event::fake([DriverLocationUpdated::class]);
+        config(['runix.matching.max_location_accuracy_meters' => 100]);
+        $driver = Driver::factory()->create(['is_online' => true]);
+        $order = Order::factory()->accepted()->create(['driver_id' => $driver->id]);
+        $driver->update(['current_order_id' => $order->id]);
+
+        $this->actingAs($driver->user)
+            ->patchJson(route('driver.location.update'), $this->payload(['accuracy' => 150]))
+            ->assertOk();
+
+        Event::assertNotDispatched(DriverLocationUpdated::class);
     }
 
     public function test_submitting_while_offline_still_persists_the_location(): void

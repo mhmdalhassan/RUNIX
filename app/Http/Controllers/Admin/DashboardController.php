@@ -17,26 +17,14 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    /**
-     * How many rows the Recent Orders card shows — same limit
-     * Dispatch\DashboardController uses for its own "recent" lists.
-     */
     private const RECENT_ORDERS_LIMIT = 10;
 
     public function __invoke(Request $request): View
     {
-        // Every reporting figure below is scoped to this range —
-        // DashboardPeriod::TODAY (the default, when no ?period= is
-        // given) reproduces the original always-today behavior exactly,
-        // which is why the view keys stay *Today-suffixed regardless of
-        // which period is actually selected.
+
         $period = DashboardPeriod::fromRequest($request->query('period'));
         $selectedDate = $this->parseSelectedDate($request->query('date'));
 
-        // CUSTOM picks one whole calendar day, start to end — unlike the
-        // relative presets, its end is NOT "now" (a past day's own
-        // end-of-day, or the range would silently balloon to include
-        // everything up to the present moment for any past date picked).
         if ($period->isCustom()) {
             $start = $selectedDate->copy()->startOfDay();
             $end = $selectedDate->copy()->endOfDay();
@@ -45,10 +33,6 @@ class DashboardController extends Controller
             $end = Carbon::now();
         }
 
-        // Delivered-in-range is the one cohort shared by Revenue/Driver
-        // Earnings/Net Profit/Driver Overview below — built once so the
-        // range boundaries can't drift between them if this method is
-        // ever split up later.
         $deliveredInRange = Order::where('status', OrderStatus::DELIVERED->value)
             ->whereBetween('delivered_at', [$start, $end]);
 

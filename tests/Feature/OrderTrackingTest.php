@@ -290,6 +290,47 @@ class OrderTrackingTest extends TestCase
         $response->assertSee(OrderStatus::FAILED->label());
     }
 
+    // --- Live Location card (App\Http\Controllers\OrderLocationController) --
+
+    public function test_the_live_location_card_shows_for_a_non_terminal_order(): void
+    {
+        $order = Order::factory()->accepted()->create();
+
+        $response = $this->get(route('track.show', $order->tracking_token));
+
+        $response->assertOk();
+        $response->assertSee(__('Live Location'));
+        $response->assertSee('id="order-tracking-map-root"', false);
+    }
+
+    public function test_the_live_location_card_is_absent_once_terminal(): void
+    {
+        $order = Order::factory()->delivered()->create();
+
+        $response = $this->get(route('track.show', $order->tracking_token));
+
+        $response->assertOk();
+        $response->assertDontSee(__('Live Location'));
+        $response->assertDontSee('id="order-tracking-map-root"', false);
+    }
+
+    /**
+     * The polling URL a data attribute would otherwise carry is
+     * literally the token again (/track/{token}/location) — dropped
+     * entirely in favor of deriving it client-side from the page's own
+     * address (see order-tracking-map.js), specifically so this
+     * doesn't regress test_tracking_token_is_not_rendered_in_the_page_body.
+     */
+    public function test_the_live_location_card_does_not_render_a_polling_url_containing_the_token(): void
+    {
+        $order = Order::factory()->accepted()->create();
+
+        $response = $this->get(route('track.show', $order->tracking_token));
+
+        $response->assertOk();
+        $response->assertDontSee($order->tracking_token, false);
+    }
+
     // --- Admin "Tracking Link" (spec §C/§14) -------------------------------
 
     public function test_dispatcher_sees_the_tracking_link_on_the_order_show_page(): void

@@ -7,6 +7,7 @@ import './runix/driver-offers';
 import './runix/driver-available-orders';
 import './runix/driver-location';
 import './runix/pickup-location';
+import './runix/order-tracking-map';
 import './echo';
 
 window.Alpine = Alpine;

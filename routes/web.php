@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\LocaleController;
+use App\Http\Controllers\OrderLocationController;
 use App\Http\Controllers\OrderTrackingController;
 use App\Http\Controllers\RestaurantController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
-
 
 Route::get('/', function (Request $request) {
     if ($request->user()) {
@@ -25,16 +25,15 @@ Route::get('/', function (Request $request) {
     return view('welcome');
 })->name('home');
 
-
 Route::get('/locale/{locale}', LocaleController::class)->name('locale.switch');
 
 Route::get('/track/{order:tracking_token}', OrderTrackingController::class)->name('track.show');
+Route::get('/track/{order:tracking_token}/location', [OrderLocationController::class, 'show'])->name('track.location');
 
 Route::get('/restaurants', [RestaurantController::class, 'index'])->name('restaurants.index');
 Route::get('/restaurants/{restaurant}', [RestaurantController::class, 'show'])->name('restaurants.show');
 
 Route::get('/cart', [CartController::class, 'show'])->name('cart.show');
-
 
 require __DIR__.'/auth.php';
 

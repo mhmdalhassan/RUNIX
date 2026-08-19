@@ -17,7 +17,10 @@
     </head>
     <body class="font-sans text-runix-text antialiased">
         <div class="min-h-screen bg-runix-background">
-            <x-site-header />
+            {{-- One tap away via "All restaurants" right below — the nav
+                 link would just duplicate it (see site-header's own
+                 comment on this prop). --}}
+            <x-site-header :show-restaurants-link="false" />
 
             <main class="mx-auto max-w-5xl px-6 pb-16 pt-4">
                 <a href="{{ route('restaurants.index') }}" class="runix-text-caption inline-flex items-center gap-1 font-medium text-runix-text-secondary hover:text-runix-text">
@@ -38,40 +41,53 @@
                     </div>
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
-                            <h1 class="runix-text-display">{{ $restaurant->name }}</h1>
-                            <x-status-badge :status="$restaurant->isOpenNow() ? 'open' : 'closed'" />
+                            <h1 class="runix-text-display truncate">{{ $restaurant->name }}</h1>
+                            <x-status-badge :status="$restaurant->isOpenNow() ? 'open' : 'closed'" class="shrink-0" />
                         </div>
-                        @if ($restaurant->address)
-                            <p class="runix-text-caption mt-1">{{ $restaurant->address }}</p>
-                        @endif
-                        @if ($restaurant->hoursLabel() || $restaurant->closedWeekdaysLabel())
-                            <p class="runix-text-caption mt-1">
-                                @if ($restaurant->hoursLabel())
-                                    {{ __('Hours') }}: {{ $restaurant->hoursLabel() }}
-                                @endif
-                                @if ($restaurant->closedWeekdaysLabel())
-                                    · {{ $restaurant->closedWeekdaysLabel() }}
-                                @endif
-                            </p>
-                        @endif
+
+                        {{-- One scannable info line instead of two stacked
+                             captions — icon-prefixed the way a "restaurant
+                             info bar" reads in most delivery apps, so
+                             address/hours/days-off don't need their own
+                             separate labels to be understood at a glance. --}}
+                        <div class="runix-text-caption mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            @if ($restaurant->address)
+                                <span class="inline-flex items-center gap-1">
+                                    <x-icon name="map-pin" class="h-3.5 w-3.5 shrink-0 text-runix-text-tertiary" />
+                                    {{ $restaurant->address }}
+                                </span>
+                            @endif
+                            @if ($restaurant->hoursLabel())
+                                <span class="inline-flex items-center gap-1">
+                                    <x-icon name="clock" class="h-3.5 w-3.5 shrink-0 text-runix-text-tertiary" />
+                                    {{ $restaurant->hoursLabel() }}
+                                </span>
+                            @endif
+                            @if ($restaurant->closedWeekdaysLabel())
+                                <span>{{ $restaurant->closedWeekdaysLabel() }}</span>
+                            @endif
+                        </div>
                     </div>
                 </div>
 
                 @unless ($restaurant->isOpenNow())
-                    <div class="runix-card mt-6" style="border-color: var(--runix-warning); background-color: var(--runix-warning-soft);">
-                        <p class="runix-text-body font-medium">{{ __('This restaurant is currently closed.') }}</p>
-                        <p class="runix-text-caption mt-1">
-                            @if ($restaurant->isClosedToday())
-                                {{ __('Closed today.') }}
-                                @if ($restaurant->hoursLabel())
-                                    {{ __('Regular hours: :hours.', ['hours' => $restaurant->hoursLabel()]) }}
+                    <div class="runix-card mt-6 flex items-start gap-3" style="border-color: var(--runix-warning); background-color: var(--runix-warning-soft);">
+                        <x-icon name="alert-triangle" class="h-5 w-5 shrink-0 text-[var(--runix-warning)]" />
+                        <div>
+                            <p class="runix-text-body font-medium">{{ __('This restaurant is currently closed.') }}</p>
+                            <p class="runix-text-caption mt-1">
+                                @if ($restaurant->isClosedToday())
+                                    {{ __('Closed today.') }}
+                                    @if ($restaurant->hoursLabel())
+                                        {{ __('Regular hours: :hours.', ['hours' => $restaurant->hoursLabel()]) }}
+                                    @endif
+                                @elseif ($restaurant->hoursLabel())
+                                    {{ __('It opens again at :time.', ['time' => $restaurant->opens_at->format('g:i A')]) }}
+                                @else
+                                    {{ __('Please check back later.') }}
                                 @endif
-                            @elseif ($restaurant->hoursLabel())
-                                {{ __('It opens again at :time.', ['time' => $restaurant->opens_at->format('g:i A')]) }}
-                            @else
-                                {{ __('Please check back later.') }}
-                            @endif
-                        </p>
+                            </p>
+                        </div>
                     </div>
                 @endunless
 
@@ -127,44 +143,55 @@
                                 },
                             }"
                         >
-                            <div class="relative mb-4 max-w-sm">
-                                <x-icon name="search" class="pointer-events-none absolute inset-y-0 start-3 my-auto h-4 w-4 text-runix-text-secondary" />
-                                <input
-                                    type="text"
-                                    x-model="search"
-                                    placeholder="{{ __('Search this menu…') }}"
-                                    class="runix-input w-full ps-9"
-                                    aria-label="{{ __('Search this menu…') }}"
-                                >
+                            {{-- Sticky so search/category filtering stays
+                                 reachable while scrolling a long menu —
+                                 solid background (not blurred/translucent:
+                                 --runix-background is a plain var(), not
+                                 the rgb()-with-alpha-slot shape Tailwind's
+                                 opacity modifiers need) so content behind
+                                 it never shows through. --}}
+                            <div class="sticky top-0 z-20 -mx-6 bg-runix-background px-6 pb-4 pt-2">
+                                <div class="relative max-w-sm">
+                                    <x-icon name="search" class="pointer-events-none absolute inset-y-0 start-3 my-auto h-4 w-4 text-runix-text-secondary" />
+                                    <input
+                                        type="text"
+                                        x-model="search"
+                                        placeholder="{{ __('Search this menu…') }}"
+                                        class="runix-input w-full ps-9"
+                                        aria-label="{{ __('Search this menu…') }}"
+                                    >
+                                </div>
+
+                                @if ($restaurant->menuCategories->filter(fn ($category) => $category->menuItems->isNotEmpty())->count() > 1)
+                                    <div class="mt-4 flex flex-wrap gap-2" role="group" aria-label="{{ __('Filter by category') }}">
+                                        <button
+                                            type="button"
+                                            @click="activeCategory = 'all'"
+                                            :aria-pressed="(activeCategory === 'all').toString()"
+                                            class="runix-text-caption rounded-full border px-3 py-1.5 font-medium transition"
+                                            :class="activeCategory === 'all' ? 'border-transparent bg-runix-primary text-white' : 'border-[var(--runix-border)] text-runix-text-secondary hover:border-runix-primary hover:text-runix-text'"
+                                        >
+                                            {{ __('All') }}
+                                        </button>
+
+                                        @foreach ($restaurant->menuCategories as $category)
+                                            @if ($category->menuItems->isNotEmpty())
+                                                <button
+                                                    type="button"
+                                                    @click="activeCategory = {{ \Illuminate\Support\Js::from($category->name) }}"
+                                                    :aria-pressed="(activeCategory === {{ \Illuminate\Support\Js::from($category->name) }}).toString()"
+                                                    class="runix-text-caption rounded-full border px-3 py-1.5 font-medium transition"
+                                                    :class="activeCategory === {{ \Illuminate\Support\Js::from($category->name) }} ? 'border-transparent bg-runix-primary text-white' : 'border-[var(--runix-border)] text-runix-text-secondary hover:border-runix-primary hover:text-runix-text'"
+                                                >
+                                                    {{ $category->name }}
+                                                </button>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
 
-                            @if ($restaurant->menuCategories->filter(fn ($category) => $category->menuItems->isNotEmpty())->count() > 1)
-                                <div class="mb-6 flex flex-wrap gap-2" role="group" aria-label="{{ __('Filter by category') }}">
-                                    <button
-                                        type="button"
-                                        @click="activeCategory = 'all'"
-                                        class="runix-text-caption rounded-full border px-3 py-1.5 font-medium transition"
-                                        :class="activeCategory === 'all' ? 'border-transparent bg-runix-primary text-white' : 'border-[var(--runix-border)] text-runix-text-secondary hover:border-runix-primary hover:text-runix-text'"
-                                    >
-                                        {{ __('All') }}
-                                    </button>
-
-                                    @foreach ($restaurant->menuCategories as $category)
-                                        @if ($category->menuItems->isNotEmpty())
-                                            <button
-                                                type="button"
-                                                @click="activeCategory = {{ \Illuminate\Support\Js::from($category->name) }}"
-                                                class="runix-text-caption rounded-full border px-3 py-1.5 font-medium transition"
-                                                :class="activeCategory === {{ \Illuminate\Support\Js::from($category->name) }} ? 'border-transparent bg-runix-primary text-white' : 'border-[var(--runix-border)] text-runix-text-secondary hover:border-runix-primary hover:text-runix-text'"
-                                            >
-                                                {{ $category->name }}
-                                            </button>
-                                        @endif
-                                    @endforeach
-                                </div>
-                            @endif
-
-                            <div x-show="visibleCount === 0" x-cloak>
+                            <div class="mt-6" x-show="visibleCount === 0" x-cloak>
                                 <x-empty-state
                                     icon="search"
                                     title="{{ __('No items match your search') }}"
@@ -172,7 +199,7 @@
                                 />
                             </div>
 
-                            <div class="space-y-8">
+                            <div class="mt-6 space-y-8">
                                 @foreach ($restaurant->menuCategories as $category)
                                     @if ($category->menuItems->isNotEmpty())
                                         <div x-show="categoryVisible({{ \Illuminate\Support\Js::from($category->name) }})" x-cloak>
@@ -276,6 +303,12 @@
                 x-data
                 x-show="$store.cart.restaurantId === {{ $restaurant->id }} && $store.cart.itemCount > 0"
                 x-cloak
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 translate-y-2"
                 class="fixed inset-x-4 bottom-4 z-40 sm:left-1/2 sm:right-auto sm:w-full sm:max-w-md sm:-translate-x-1/2"
             >
                 <a

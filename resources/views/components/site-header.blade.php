@@ -11,34 +11,44 @@
     Every other page using this header leaves $dark false and gets the
     ordinary light/dark-aware tokens.
 
-    Stacks logo above nav below `sm` — at narrow widths the logo + all
-    three nav items (Restaurants, language switcher, sign in/out) don't
-    fit on one row, and a plain `justify-between` with no wrap just
-    crushes them together with zero gap instead of overflowing (the
-    classic invisible-until-you-check-a-real-phone-width bug). `sm:` and
-    up goes back to the original single-row layout.
+    One row at every width — logo left, nav right, always beside each
+    other rather than the nav stacking below the logo on narrow screens.
+    The nav itself (cart, language switcher, sign in/log out) still wraps
+    onto a second line if it ever truly runs out of room (`flex-wrap` +
+    `justify-end` keeps that second line right-aligned under the first,
+    not crushed against the logo) — but the nav items are compact enough
+    (icons, a two-letter "EN | AR" switcher) that this only bites at
+    genuinely tiny widths.
+
+    $showRestaurantsLink: on by default (welcome.blade.php/cart/show.blade.php
+    need it as their actual entry point into browsing restaurants) — the
+    restaurant listing/menu pages pass false, since a "Restaurants" link
+    is dead weight on the page that already IS the restaurant listing (or
+    one tap away from it via the "All restaurants" link on the menu page).
 --}}
 
-@props(['dark' => false])
+@props(['dark' => false, 'showRestaurantsLink' => true])
 
-<header class="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:py-6">
-    <a href="{{ route('home') }}" class="flex items-center gap-2.5">
+<header class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-4 sm:py-6">
+    <a href="{{ route('home') }}" class="flex shrink-0 items-center gap-2.5">
         <x-application-logo class="h-8 w-8 shrink-0" />
         <span class="text-lg font-semibold {{ $dark ? 'text-white' : 'text-runix-text' }}">RunIX</span>
     </a>
 
-    <nav class="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-6">
-        {{-- Icon + label, not text alone — a recognizable pictogram so
-             the link reads even to someone who can't read the label
-             (low literacy, unfamiliar language before they've switched
-             locale, glancing at a small screen). --}}
-        <a
-            href="{{ route('restaurants.index') }}"
-            class="inline-flex items-center gap-1.5 text-sm font-medium {{ $dark ? 'text-white/70 hover:text-white' : 'text-runix-text-secondary hover:text-runix-text' }}"
-        >
-            <x-icon name="store" class="h-4 w-4 shrink-0" />
-            {{ __('Restaurants') }}
-        </a>
+    <nav class="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 sm:gap-6">
+        @if ($showRestaurantsLink)
+            {{-- Icon + label, not text alone — a recognizable pictogram so
+                 the link reads even to someone who can't read the label
+                 (low literacy, unfamiliar language before they've switched
+                 locale, glancing at a small screen). --}}
+            <a
+                href="{{ route('restaurants.index') }}"
+                class="inline-flex items-center gap-1.5 text-sm font-medium {{ $dark ? 'text-white/70 hover:text-white' : 'text-runix-text-secondary hover:text-runix-text' }}"
+            >
+                <x-icon name="store" class="h-4 w-4 shrink-0" />
+                {{ __('Restaurants') }}
+            </a>
+        @endif
 
         <a
             href="{{ route('cart.show') }}"

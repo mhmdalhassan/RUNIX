@@ -6,6 +6,7 @@ use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\Restaurant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
 /**
@@ -34,6 +35,28 @@ class RestaurantsPublicPageTest extends TestCase
         $this->get(route('restaurants.index'))
             ->assertOk()
             ->assertDontSee('Closed Kitchen');
+    }
+
+    public function test_the_listing_shows_a_result_count(): void
+    {
+        Restaurant::factory()->count(3)->create(['is_active' => true]);
+
+        $this->get(route('restaurants.index'))
+            ->assertOk()
+            ->assertSee('3 restaurants found');
+    }
+
+    public function test_the_listing_shows_a_clear_search_link_only_while_searching(): void
+    {
+        Restaurant::factory()->create(['name' => 'Burger Barn', 'is_active' => true]);
+
+        $this->get(route('restaurants.index'))
+            ->assertOk()
+            ->assertDontSee(__('Clear search'));
+
+        $this->get(route('restaurants.index', ['search' => 'Burger']))
+            ->assertOk()
+            ->assertSee(__('Clear search'));
     }
 
     public function test_search_matches_restaurant_name(): void
@@ -239,6 +262,28 @@ class RestaurantsPublicPageTest extends TestCase
         $this->get(route('restaurants.show', $restaurant))
             ->assertOk()
             ->assertDontSee('runix-btn-secondary runix-btn-sm', false);
+    }
+
+    // --- Site header's "Restaurants" nav link -------------------------------
+
+    public function test_the_restaurants_nav_link_defaults_to_shown(): void
+    {
+        // Rendered in isolation (not via a full page) so presence/absence
+        // of route('restaurants.index') is unambiguous — several other
+        // links on the real pages (the "All restaurants" breadcrumb, the
+        // clear-search link) point at that same URL for unrelated
+        // reasons, which would make a page-level assertion a false
+        // negative/positive either way.
+        $html = Blade::render('<x-site-header />');
+
+        $this->assertStringContainsString(route('restaurants.index'), $html);
+    }
+
+    public function test_the_restaurants_nav_link_can_be_hidden(): void
+    {
+        $html = Blade::render('<x-site-header :show-restaurants-link="false" />');
+
+        $this->assertStringNotContainsString(route('restaurants.index'), $html);
     }
 
     public function test_the_show_page_includes_a_search_box_and_a_no_results_message_for_client_side_filtering(): void
