@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Driver;
 
 use App\Enums\OrderOfferResult;
+use App\Exceptions\DriverUnavailableException;
 use App\Exceptions\OrderAlreadyClaimedException;
 use App\Http\Controllers\Controller;
 use App\Services\Orders\RespondToOrderOfferService;
@@ -64,7 +65,7 @@ class OrderOfferController extends Controller
 
         try {
             $service->accept($offerModel, $request->user());
-        } catch (OrderAlreadyClaimedException|InvalidArgumentException $e) {
+        } catch (OrderAlreadyClaimedException|DriverUnavailableException|InvalidArgumentException $e) {
             return back()->withErrors(['offer' => $e->getMessage()]);
         }
 

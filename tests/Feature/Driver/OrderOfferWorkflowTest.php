@@ -192,6 +192,77 @@ class OrderOfferWorkflowTest extends TestCase
         $this->assertNull($loser->fresh()->current_order_id);
     }
 
+    public function test_an_offline_driver_cannot_accept_their_own_pending_offer(): void
+    {
+        // Offered while online, then went offline before responding — the
+        // offer itself doesn't expire just because of that, but accepting
+        // it must still be refused (spec §2: an offline driver can never
+        // end up holding a live order), the same guarantee
+        // ClaimAvailableOrderService's board already enforces.
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
+        $order = Order::factory()->available()->create();
+        $offer = OrderOffer::factory()->create([
+            'order_id' => $order->id,
+            'driver_id' => $driver->id,
+        ]);
+
+        $driver->update(['is_online' => false]);
+
+        $this->actingAs($driver->user)
+            ->patch(route('driver.offers.accept', $offer))
+            ->assertSessionHasErrors('offer');
+
+        $this->assertTrue($offer->fresh()->result === OrderOfferResult::CANCELLED);
+        $this->assertTrue($order->fresh()->status === OrderStatus::AVAILABLE);
+        $this->assertNull($driver->fresh()->current_order_id);
+    }
+
+    public function test_an_inactive_driver_cannot_accept_their_own_pending_offer(): void
+    {
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
+        $order = Order::factory()->available()->create();
+        $offer = OrderOffer::factory()->create([
+            'order_id' => $order->id,
+            'driver_id' => $driver->id,
+        ]);
+
+        $driver->update(['is_active' => false]);
+
+        $this->actingAs($driver->user)
+            ->patch(route('driver.offers.accept', $offer))
+            ->assertSessionHasErrors('offer');
+
+        $this->assertTrue($offer->fresh()->result === OrderOfferResult::CANCELLED);
+        $this->assertTrue($order->fresh()->status === OrderStatus::AVAILABLE);
+    }
+
+    public function test_accepting_a_second_pending_offer_after_already_being_occupied_fails_gracefully(): void
+    {
+        // A driver can hold two independently-PENDING offers for two
+        // different orders at once (EligibleDriverFinder only excludes a
+        // driver from a *specific* order's offers, not globally). Accepting
+        // the first occupies them; accepting the second must fail cleanly
+        // through ClaimOrderForDriverService's occupancy check rather than
+        // ever reaching a live order — this used to be an uncaught
+        // DriverUnavailableException (a 500), since RespondToOrderOfferService
+        // only caught OrderAlreadyClaimedException.
+        $driver = Driver::factory()->create(['is_active' => true, 'is_online' => true]);
+        $firstOrder = Order::factory()->available()->create();
+        $secondOrder = Order::factory()->available()->create();
+        $firstOffer = OrderOffer::factory()->create(['order_id' => $firstOrder->id, 'driver_id' => $driver->id]);
+        $secondOffer = OrderOffer::factory()->create(['order_id' => $secondOrder->id, 'driver_id' => $driver->id]);
+
+        $this->actingAs($driver->user)->patch(route('driver.offers.accept', $firstOffer))->assertRedirect();
+
+        $this->actingAs($driver->user)
+            ->patch(route('driver.offers.accept', $secondOffer))
+            ->assertSessionHasErrors('offer');
+
+        $this->assertTrue($secondOffer->fresh()->result === OrderOfferResult::CANCELLED);
+        $this->assertTrue($secondOrder->fresh()->status === OrderStatus::AVAILABLE);
+        $this->assertSame($firstOrder->id, $driver->fresh()->current_order_id);
+    }
+
     // --- Reject -------------------------------------------------------------
 
     public function test_driver_can_reject_a_pending_offer(): void

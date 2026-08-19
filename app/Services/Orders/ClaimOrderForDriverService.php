@@ -32,14 +32,27 @@ use Illuminate\Support\Facades\DB;
  *
  * Assumes the order is already AVAILABLE — a caller starting from PENDING
  * (manual assignment can) must transition it to AVAILABLE first.
+ *
+ * The driver-side `UPDATE` also re-checks `is_active`/`is_online` in its
+ * own `WHERE` clause, not just occupancy — this is the one place all three
+ * callers (offer-accept, board-claim, manual assignment) converge, so it's
+ * the only spot that can guarantee the check atomically for all of them.
+ * ClaimAvailableOrderService/AssignDriverService additionally pre-check
+ * this themselves for a friendlier error before opening a transaction, but
+ * neither of those pre-checks can close the gap between "checked" and
+ * "the UPDATE actually runs" the way a `WHERE` clause on the same
+ * statement can — a driver going offline/inactive in that exact window is
+ * still caught here.
  */
 class ClaimOrderForDriverService
 {
     /**
      * @throws OrderAlreadyClaimedException if the order wasn't AVAILABLE
      *                                      at claim time (someone else already won it).
-     * @throws DriverUnavailableException if the driver became occupied
-     *                                    concurrently (rolls back the order claim above too).
+     * @throws DriverUnavailableException if the driver isn't currently
+     *                                    claimable — occupied by another order, or (as of this check)
+     *                                    inactive/offline — whether that was already true or became
+     *                                    true concurrently with this call.
      */
     public function claim(Order $order, Driver $driver, ?User $actor, ?string $note = null): Order
     {
@@ -61,6 +74,8 @@ class ClaimOrderForDriverService
             $driverClaimed = Driver::query()
                 ->whereKey($driver->id)
                 ->whereNull('current_order_id')
+                ->where('is_active', true)
+                ->where('is_online', true)
                 ->update([
                     'current_order_id' => $order->id,
                 ]);

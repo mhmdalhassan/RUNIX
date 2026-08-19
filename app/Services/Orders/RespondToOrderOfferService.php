@@ -6,6 +6,7 @@ use App\Enums\OrderOfferResult;
 use App\Events\DispatchActivityUpdated;
 use App\Events\OrderStatusUpdated;
 use App\Events\OrderTaken;
+use App\Exceptions\DriverUnavailableException;
 use App\Exceptions\OrderAlreadyClaimedException;
 use App\Models\OrderOffer;
 use App\Models\User;
@@ -26,11 +27,15 @@ class RespondToOrderOfferService
 
     /**
      * @throws InvalidArgumentException if the offer isn't PENDING.
-     * @throws OrderAlreadyClaimedException if another driver won the race
-     *                                      — this offer is marked CANCELLED (the same result the other
-     *                                      still-pending offers get on a win) before re-throwing, so
-     *                                      the controller can turn it into a clean "no longer
-     *                                      available" response.
+     * @throws OrderAlreadyClaimedException if another driver won the race.
+     * @throws DriverUnavailableException if this driver is no longer
+     *                                    claimable themselves by the time this offer is accepted —
+     *                                    e.g. they already accepted a different pending offer of
+     *                                    theirs first, or went offline/inactive in the meantime.
+     *                                    Either exception marks this offer CANCELLED (the same result
+     *                                    the other still-pending offers get on a win) before
+     *                                    re-throwing, so the controller can turn it into a clean
+     *                                    "no longer available" response instead of a 500.
      */
     public function accept(OrderOffer $offer, User $actor): OrderOffer
     {
@@ -64,7 +69,7 @@ class RespondToOrderOfferService
 
                 return $offer->fresh();
             });
-        } catch (OrderAlreadyClaimedException $e) {
+        } catch (OrderAlreadyClaimedException|DriverUnavailableException $e) {
             $offer->update([
                 'result' => OrderOfferResult::CANCELLED,
                 'responded_at' => now(),

@@ -53,6 +53,14 @@
                     @endif
 
                     <x-card title="{{ __('Available Orders') }}">
+                        {{-- Claiming an order redirects back() with
+                             withErrors(['order' => ...]) on a lost race or
+                             an availability check failure (see
+                             AvailableOrdersController::claim()) — without
+                             this, that failure was silent: the board just
+                             re-rendered as if nothing happened. --}}
+                        <x-input-error :messages="$errors->get('order')" class="mb-4" />
+
                         <div id="available-orders-list" class="runix-order-board-container" data-driver-id="{{ $driver->id }}">
                             @include('driver.partials.available-orders-list', ['orders' => $availableOrders, 'driver' => $driver])
                         </div>
